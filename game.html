@@ -3,205 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena: Pro Edition</title>
+    <title>Spy Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --red: #ff4444; --green: #00ff88; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; }
-        
-        .header-card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid #262626; margin-bottom: 10px; position: relative; }
-        .role-badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
-        .word-display { font-size: 22px; font-weight: 900; color: var(--text); }
-        .round-info { position: absolute; right: 15px; top: 15px; font-size: 10px; color: #555; font-weight: 900; }
-
-        #chat-container { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { max-width: 85%; animation: fadeIn 0.3s ease; }
-        .msg.me { align-self: flex-end; text-align: right; }
-        .msg-u { font-size: 9px; color: #444; margin-bottom: 2px; text-transform: uppercase; }
-        .msg-t { background: #222; padding: 10px 14px; border-radius: 15px; display: inline-block; font-size: 14px; }
-        .msg.me .msg-t { background: var(--primary); }
-
-        .turn-bar { text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 1px; margin-bottom: 8px; }
-
-        .input-box { display: flex; gap: 8px; background: var(--card); padding: 8px; border-radius: 18px; border: 1px solid #262626; }
-        input { flex-grow: 1; background: none; border: none; color: #fff; padding: 10px; font-family: inherit; outline: none; }
-        .send-btn { background: var(--green); border: none; width: 45px; height: 45px; border-radius: 14px; font-weight: 900; }
-        .send-btn:disabled { background: #222; opacity: 0.5; }
-
-        .phase-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .hidden { display: none !important; }
-        
-        .grid-vote { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 20px; }
-        .v-btn { background: var(--card); border: 1px solid #333; color: #fff; padding: 20px; border-radius: 15px; font-weight: 700; }
-
-        /* Кнопка стопа */
-        .stop-btn { background: none; border: 1px solid #330000; color: #552222; font-size: 9px; font-weight: 900; padding: 8px; margin-top: 5px; border-radius: 10px; text-transform: uppercase; cursor: pointer; }
-        .stop-btn:active { background: var(--red); color: white; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --red: #ff4444; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        .card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid #262626; margin-bottom: 10px; }
+        #chat { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; }
+        .input-area { display: flex; gap: 8px; background: var(--card); padding: 8px; border-radius: 18px; }
+        input { flex-grow: 1; background: none; border: none; color: #fff; padding: 10px; }
+        .s-btn { background: #00ff88; border: none; width: 45px; height: 45px; border-radius: 12px; }
+        .stop-btn { background: none; border: 1px solid #400; color: #600; padding: 5px; font-size: 8px; margin-top: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="main-game" style="display: contents;">
-        <div class="header-card">
-            <div id="round-num" class="round-info">КРУГ 1/3</div>
-            <div id="my-role" class="role-badge">РОЛЬ</div>
-            <div id="target-word" class="word-display">...</div>
-            <div id="category-name" style="font-size: 10px; color: #555; margin-top: 3px;">КАТЕГОРИЯ: ...</div>
-        </div>
-
-        <div id="turn-indicator" class="turn-bar">СИНХРОНИЗАЦИЯ...</div>
-
-        <div id="chat-container"></div>
-
-        <div class="input-box">
-            <input id="chat-input" type="text" placeholder="Ваш вопрос..." disabled>
-            <button id="send-btn" class="send-btn" onclick="sendMsg()" disabled>></button>
-        </div>
-
-        <button class="stop-btn" onclick="emergencyStop()">Экстренное завершение игры</button>
+    <div class="card">
+        <div id="r-tag" style="color:var(--primary); font-size:10px;">РОЛЬ...</div>
+        <div id="w-tag" style="font-size:20px; font-weight:900;">СЛОВО...</div>
     </div>
 
-    <div id="screen-vote" class="phase-screen hidden">
-        <h1>КТО ШПИОН?</h1>
-        <div id="vote-list" class="grid-vote"></div>
+    <div id="chat"></div>
+
+    <div class="input-area">
+        <input id="in" type="text" placeholder="Ваш ход..." disabled>
+        <button id="btn" class="s-btn" onclick="send()" disabled>></button>
     </div>
 
-    <div id="screen-spy" class="phase-screen hidden">
-        <h1 style="color: var(--red);">ВЫ РАСКРЫТЫ!</h1>
-        <p>Назовите слово:</p>
-        <div class="input-box" style="width: 100%;">
-            <input id="spy-guess-input" type="text">
-            <button class="send-btn" onclick="sendSpyGuess()" style="background: var(--red);">OK</button>
-        </div>
-    </div>
-
-    <div id="screen-results" class="phase-screen hidden">
-        <div style="background: var(--card); padding: 30px; border-radius: 25px; width: 80%;">
-            <h2 id="win-title" style="color: var(--green);">ФИНАЛ</h2>
-            <p id="spy-name-reveal"></p>
-            <button class="send-btn" style="width:100%; height:auto; padding:15px;" onclick="exitToLobby()">В ЛОББИ</button>
-        </div>
-    </div>
+    <button class="stop-btn" onclick="stop()">ЭКСТРЕННЫЙ СТОП</button>
 
     <script>
-        const tg = window.Telegram.WebApp;
         const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
         const myName = localStorage.getItem('spy_name');
-
-        let lastPhase = "";
+        let isExiting = false;
 
         async function sync() {
+            if (isExiting) return;
             try {
-                const response = await fetch(`${SERVER_URL}/game_data?name=${encodeURIComponent(myName)}`, {
-                    headers: {'ngrok-skip-browser-warning': 'true'}
-                });
-                const data = await response.json();
+                const r = await fetch(`${SERVER_URL}/game_data?name=${encodeURIComponent(myName)}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+                const d = await r.json();
                 
-                if (!data.active) {
-                    window.location.href = "spy_bot.html"; // Если игру сбросили, уходим в лобби
+                // ЕСЛИ ИГРА НЕ АКТИВНА - ВЫХОДИМ МГНОВЕННО
+                if (!d.active) {
+                    isExiting = true;
+                    window.location.replace("spy_bot.html");
                     return;
                 }
 
-                // Оптимизация: переключаем экраны только если фаза изменилась
-                if (lastPhase !== data.phase) {
-                    document.getElementById('screen-vote').classList.toggle('hidden', data.phase !== 'VOTING');
-                    document.getElementById('screen-spy').classList.toggle('hidden', data.phase !== 'SPY_GUESS' || data.role !== 'ШПИОН');
-                    document.getElementById('screen-results').classList.toggle('hidden', data.phase !== 'RESULTS');
-                    lastPhase = data.phase;
-                }
+                document.getElementById('r-tag').innerText = d.role;
+                document.getElementById('w-tag').innerText = d.word;
+                
+                const input = document.getElementById('in');
+                const btn = document.getElementById('btn');
+                input.disabled = !d.is_my_turn;
+                btn.disabled = !d.is_my_turn;
 
-                document.getElementById('my-role').innerText = data.role;
-                document.getElementById('my-role').style.background = data.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
-                document.getElementById('target-word').innerText = data.word;
-                document.getElementById('category-name').innerText = "КАТЕГОРИЯ: " + data.category;
-                document.getElementById('round-num').innerText = `КРУГ ${data.round}/3`;
-
-                if (data.phase === 'CHAT') {
-                    const indicator = document.getElementById('turn-indicator');
-                    const input = document.getElementById('chat-input');
-                    const btn = document.getElementById('send-btn');
-
-                    if (data.is_my_turn) {
-                        indicator.innerText = "ВАШ ХОД!";
-                        indicator.style.color = "var(--green)";
-                        input.disabled = false;
-                        btn.disabled = false;
-                    } else {
-                        indicator.innerText = `ПИШЕТ: ${data.current_turn}`;
-                        indicator.style.color = "#555";
-                        input.disabled = true;
-                        btn.disabled = true;
-                    }
-
-                    const chatBox = document.getElementById('chat-container');
-                    const newHtml = data.messages.map(m => `
-                        <div class="msg ${m.user === myName ? 'me' : ''}">
-                            <div class="msg-u">${m.user}</div>
-                            <div class="msg-t">${m.text}</div>
-                        </div>
-                    `).join('');
-                    
-                    if (chatBox.innerHTML !== newHtml) {
-                        chatBox.innerHTML = newHtml;
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                }
-
-                if (data.phase === 'VOTING') {
-                    const vList = document.getElementById('vote-list');
-                    if (vList.innerHTML === "") {
-                        vList.innerHTML = data.order.filter(p => p !== myName).map(p => 
-                            `<button class="v-btn" onclick="sendVote('${p}')">${p}</button>`
-                        ).join('');
-                    }
-                }
-
-                if (data.phase === 'RESULTS') {
-                    document.getElementById('spy-name-reveal').innerText = `Шпионом был: ${data.spy}`;
-                }
-
-            } catch (err) { console.log("Sync error"); }
+                document.getElementById('chat').innerHTML = d.messages.map(m => `
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:10px; color:#444;">${m.user}</div>
+                        <div style="background:#222; padding:8px; border-radius:10px; display:inline-block;">${m.text}</div>
+                    </div>
+                `).join('');
+            } catch (e) { console.log("error sync"); }
         }
 
-        async function sendMsg() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-            input.value = "";
+        async function send() {
+            const el = document.getElementById('in');
+            const val = el.value;
+            el.value = "";
             await fetch(`${SERVER_URL}/send_message`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
-                body: JSON.stringify({ name: myName, text: text })
+                body: JSON.stringify({ name: myName, text: val })
             });
             sync();
         }
 
-        async function sendVote(target) {
-            document.getElementById('screen-vote').innerHTML = "<h1>ГОЛОС ПРИНЯТ</h1>";
-            await fetch(`${SERVER_URL}/vote`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
-                body: JSON.stringify({ name: myName, target: target })
-            });
+        async function stop() {
+            await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} });
         }
 
-        async function emergencyStop() {
-            if (confirm("Это полностью остановит игру для всех. Уверены?")) {
-                await fetch(`${SERVER_URL}/reset`, { 
-                    method: 'POST', 
-                    headers: {'ngrok-skip-browser-warning': 'true'} 
-                });
-            }
-        }
-
-        async function exitToLobby() {
-            window.location.href = "spy_bot.html";
-        }
-
-        setInterval(sync, 2000); // 2 секунды — оптимально для ngrok, чтобы не лагало
+        setInterval(sync, 2000);
         sync();
     </script>
 </body>
