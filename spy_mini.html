@@ -19,7 +19,6 @@
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
         .msg.me { align-self: flex-end; background: var(--primary); }
-        /* Стиль для рамочек игроков в лобби */
         .player-badge { background: #1a1a1a; border: 1px solid #333; padding: 12px 15px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .grid-vote { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .circle-reset { background: #300; color: var(--red); border: 1px solid #500; width: 24px; height: 24px; border-radius: 50%; font-size: 18px; line-height: 22px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -55,10 +54,9 @@
     </div>
 
     <div id="main-content" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
-        
         <div id="screen-lobby" class="hidden">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button class="btn-exit" onclick="showConfirm('Выйти в меню?', leaveRoom)">← ВЫХОД</button>
+                <button class="btn-exit" onclick="showConfirm('Выйти?', leaveRoom)">← ВЫХОД</button>
                 <h3 style="margin:0; font-size:14px;">ROOM: <span id="display-room" style="color:var(--primary)"></span></h3>
             </div>
             <div class="glass-card">
@@ -147,8 +145,16 @@
         function startPolling() {
             document.getElementById('display-room').innerText = myRoom;
             setInterval(async () => {
+                if (!myRoom || !myName) return; // ФИКС: Не стучимся, пока нет данных
+
                 try {
-                    await fetch(`${SERVER_URL}/join`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) });
+                    // Теперь join вызывается только если мы уже на экране лобби/игры
+                    await fetch(`${SERVER_URL}/join`, { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, 
+                        body: JSON.stringify({ room: myRoom, name: myName }) 
+                    });
+
                     const r = await fetch(`${SERVER_URL}/game_data?room=${myRoom}&name=${encodeURIComponent(myName)}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
                     const d = await r.json();
 
@@ -168,6 +174,7 @@
         }
 
         async function updateLobby() {
+            if (!myRoom) return;
             const r = await fetch(`${SERVER_URL}/players?room=${myRoom}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
             const d = await r.json();
             document.getElementById('player-list').innerHTML = d.players.map(p => `
@@ -186,7 +193,7 @@
             document.getElementById('g-role').innerText = d.role;
             document.getElementById('g-role').style.color = d.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
             document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
-            document.getElementById('turn-indicator').innerText = d.is_my_turn ? "ТВОЙ ХОД" : `ХОДИТ: ${d.current_turn}`;
+            document.getElementById('turn-indicator').innerText = d.is_my_turn ? "★ ТВОЙ ХОД ★" : `ХОДИТ: ${d.current_turn}`;
             
             document.getElementById('chat-box').innerHTML = d.messages.map(m => `
                 <div class="msg ${m.user === myName ? 'me' : ''}">
@@ -197,7 +204,7 @@
             document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
             if(d.phase === 'RESULTS') document.getElementById('res-msg').innerText = d.result_msg;
             if(d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
-                document.getElementById('vote-list').innerHTML = d.order.filter(p=>p!==myName).map(p=>`<button class="btn" onclick="sendVote('${p}')">${p}</button>`).join('');
+                document.getElementById('vote-list').innerHTML = d.order.filter(p=>p!==myName).map(p=>`<button class="btn" style="margin-bottom:5px;" onclick="sendVote('${p}')">${p}</button>`).join('');
             }
         }
 
@@ -210,6 +217,7 @@
             await fetch(`${SERVER_URL}/send_message`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, text: v }) });
         }
         async function sendVote(t) {
+            document.getElementById('vote-list').innerHTML = "Голос отправлен...";
             await fetch(`${SERVER_URL}/vote`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, target: t }) });
         }
 
