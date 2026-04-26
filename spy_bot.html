@@ -3,124 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena Bold</title>
+    <title>ШПИОН</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Фиолетовая палитра без лишнего неона */
             --bg: #0d0d0f;
             --card-bg: #1a1a1d;
-            --primary: #8a2be2; /* Глубокий фиолетовый */
+            --primary: #8a2be2;
             --primary-light: #9d4edd;
             --text-main: #ffffff;
             --text-secondary: #a0a0a0;
         }
 
         body {
-            margin: 0;
-            padding: 20px;
+            margin: 0; padding: 20px;
             background-color: var(--bg);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
+            display: flex; flex-direction: column;
+            height: 100vh; box-sizing: border-box; overflow: hidden;
         }
 
-        .screen {
-            display: none;
-            width: 100%;
-            max-width: 400px;
-            flex-direction: column;
-            align-items: center;
-        }
+        .screen { display: none; width: 100%; flex-direction: column; }
+        .active { display: flex; animation: fadeIn 0.2s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .active { display: flex; }
-
-        /* Жирный, массивный заголовок на всю ширину */
         h1 {
-            font-size: 48px;
-            font-weight: 900;
-            line-height: 1;
-            margin: 10px 0 30px 0;
-            text-transform: uppercase;
-            text-align: center;
-            width: 100%;
+            font-size: 48px; font-weight: 900; line-height: 1;
+            margin: 10px 0 30px 0; text-transform: uppercase; text-align: center;
             background: linear-gradient(180deg, #fff 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* Карточка на всю ширину */
         .glass-card {
-            background-color: var(--card-bg);
-            width: 100%;
-            border-radius: 24px;
-            padding: 25px;
-            border: 1px solid #2d2d31;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            background-color: var(--card-bg); width: 100%;
+            border-radius: 24px; padding: 25px; border: 1px solid #2d2d31;
+            box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;
         }
 
-        /* Заголовок карточки */
-        h2 {
-            font-size: 20px;
-            font-weight: 700;
-            margin: 0 0 10px 0;
-            text-align: center;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Массивные кнопки на всю ширину */
         .bold-btn {
-            background-color: var(--primary);
-            color: #ffffff;
-            border: none;
-            border-radius: 18px;
-            padding: 18px 20px;
-            font-size: 18px;
-            font-weight: 900;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 0.1s, background-color 0.2s;
-            width: 100%; /* ТЕПЕРЬ НА ВСЮ ШИРИНУ */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            box-sizing: border-box;
+            background-color: var(--primary); color: #ffffff;
+            border: none; border-radius: 18px; padding: 18px;
+            font-size: 18px; font-weight: 900; text-transform: uppercase;
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px;
         }
 
-        /* Тактильный эффект при нажатии */
-        .bold-btn:active {
-            transform: scale(0.96);
-            background-color: var(--primary-light);
+        .bold-btn:active { transform: scale(0.96); background-color: var(--primary-light); }
+
+        /* Стили для чата игры */
+        .chat-box {
+            flex-grow: 1; background: rgba(0,0,0,0.3);
+            border-radius: 20px; padding: 15px; margin-bottom: 15px;
+            overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
         }
-
-        .btn-icon { font-size: 20px; }
-
-        /* Чат (для экрана игры) */
-        .chat-container {
-            width: 100%;
-            flex-grow: 1;
-            background: rgba(0,0,0,0.2);
-            border-radius: 18px;
-            padding: 15px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            box-sizing: border-box;
+        .msg { background: #262626; padding: 12px; border-radius: 12px; font-weight: 700; max-width: 80%; }
+        .msg.own { background: var(--primary); align-self: flex-end; }
+        
+        input {
+            background: #262626; border: none; border-radius: 12px;
+            padding: 15px; color: white; font-weight: 700; outline: none;
         }
     </style>
 </head>
@@ -129,34 +72,67 @@
     <div id="scr-menu" class="screen active">
         <h1>ШПИОН</h1>
         <div class="glass-card">
-            <h2>ВЫБЕРИ РЕЖИМ</h2>
-            <button class="bold-btn" onclick="go('Brawl Stars')">
-                <span class="btn-icon">🎮</span> BRAWL STARS
-            </button>
-            
-            <button class="bold-btn" onclick="go('Русский рэп')">
-                <span class="btn-icon">🎤</span> РУССКИЙ РЭП
-            </button>
-            
-            <button class="bold-btn" style="background-color: #444;" onclick="go('Clash Royale')">
-                <span class="btn-icon">👑</span> CLASH ROYALE
-            </button>
+            <button class="bold-btn" onclick="startGame('Brawl Stars')">🎮 BRAWL STARS</button>
+            <button class="bold-btn" onclick="startGame('Русский рэп')">🎤 РУССКИЙ РЭП</button>
+            <button class="bold-btn" style="background:#333" onclick="startGame('Clash Royale')">👑 CLASH ROYALE</button>
         </div>
     </div>
 
-    <div id="scr-role" class="screen">...</div>
-    <div id="scr-game" class="screen">...</div>
+    <div id="scr-role" class="screen">
+        <h1>ТВОЯ РОЛЬ</h1>
+        <div class="glass-card">
+            <div id="word-display" style="font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0;">СЛОВО</div>
+            <button class="bold-btn" onclick="showScreen('scr-game')">В БОЙ</button>
+        </div>
+    </div>
+
+    <div id="scr-game" class="screen" style="height: 100%;">
+        <div style="font-weight: 900; margin-bottom: 10px; color: var(--primary-light);">РАУНД <span id="round-num">1</span> / 3</div>
+        <div class="chat-box" id="chat">
+            <div class="msg">Игра началась! Твой ход.</div>
+        </div>
+        <div style="display: flex; gap: 10px; padding-bottom: 10px;">
+            <input type="text" id="min-input" style="flex-grow: 1;" placeholder="Твоё слово...">
+            <button class="bold-btn" style="width: 60px; padding: 0;" onclick="sendMove()">➡️</button>
+        </div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.setHeaderColor('#0d0d0f');
 
-        function go(topic) {
-            // Имитация данных (пока для теста)
-            console.log("Выбрана тема:", topic);
-            tg.sendData(JSON.stringify({type: 'set_topic', topic: topic}));
-            tg.close(); // В тестовом варианте закрываем
+        let currentRound = 1;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startGame(topic) {
+            const words = {'Brawl Stars': 'ЛЕОН', 'Русский рэп': 'МАКС КОРЖ', 'Clash Royale': 'ПЕККА'};
+            document.getElementById('word-display').innerText = words[topic] || 'ШПИОН';
+            showScreen('scr-role');
+            // Мы НЕ вызываем tg.sendData здесь, чтобы окно не закрылось!
+        }
+
+        function sendMove() {
+            const inp = document.getElementById('min-input');
+            if(!inp.value) return;
+
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<div class="msg own">${inp.value}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+
+            if(currentRound < 3) {
+                currentRound++;
+                document.getElementById('round-num').innerText = currentRound;
+            } else {
+                // Только в самом конце игры можно отправить данные и закрыть
+                // tg.sendData(JSON.stringify({status: 'finished'}));
+                alert("Игра окончена! (Тут будет экран голосования)");
+            }
+            inp.value = '';
         }
     </script>
 </body>
