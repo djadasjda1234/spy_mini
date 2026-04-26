@@ -49,7 +49,7 @@
         // Имитация присоединения игроков для теста
         // В реальности тут будет запрос к CloudStorage или боту
         function simulatePlayers() {
-            if (playersCount < 3) {
+            if (playersCount < 2) {
                 playersCount++;
                 const list = document.getElementById('player-list');
                 const status = document.getElementById('lobby-status');
@@ -58,7 +58,7 @@
                 list.innerHTML += `<div class="player-badge"><span>Игрок ${playersCount}</span> <span>✅</span></div>`;
                 status.innerText = `Ожидание игроков (${playersCount}/3)`;
 
-                if (playersCount === 3) {
+                if (playersCount === 2) {
                     status.innerText = "Все в сборе!";
                     status.style.color = "#00ff00";
                     btn.disabled = false;
