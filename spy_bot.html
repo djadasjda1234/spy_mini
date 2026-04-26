@@ -8,87 +8,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --text: #fff; --green: #00ff88; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
-        
-        .screen { display: flex; flex-direction: column; height: 100%; width: 100%; }
-        h1 { font-size: 48px; font-weight: 900; text-align: center; margin: 10px 0 30px 0; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .glass-card { background: var(--card); border-radius: 28px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
-        .status-label { font-size: 13px; font-weight: 900; text-transform: uppercase; text-align: center; letter-spacing: 1px; transition: 0.3s; }
-        
-        .player-item { background: #222; padding: 18px; border-radius: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--primary); animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
-        .bold-btn { background: var(--primary); color: white; border: none; padding: 22px; border-radius: 20px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.2s; width: 100%; }
-        .bold-btn:disabled { background: #262626; color: #555; transform: none; }
-        .bold-btn:active:not(:disabled) { transform: scale(0.96); }
-
-        #player-list { display: flex; flex-direction: column; gap: 10px; min-height: 50px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
+        h1 { font-size: 42px; font-weight: 900; text-align: center; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
+        .status-label { font-size: 13px; font-weight: 900; text-align: center; text-transform: uppercase; }
+        .player-item { background: #222; padding: 15px; border-radius: 15px; font-weight: 700; display: flex; justify-content: space-between; border-left: 5px solid var(--primary); }
+        .bold-btn { background: var(--primary); color: white; border: none; padding: 20px; border-radius: 18px; font-size: 18px; font-weight: 900; text-transform: uppercase; width: 100%; }
+        .bold-btn:disabled { background: #262626; color: #555; }
     </style>
 </head>
 <body>
 
-    <div id="scr-lobby" class="screen">
-        <h1>ЛОББИ</h1>
-        <div class="glass-card">
-            <div id="status" class="status-label" style="color: #ff4444;">ПРОВЕРКА СВЯЗИ...</div>
-            <div id="player-list"></div>
-            <button id="start-btn" class="bold-btn" disabled>ОЖИДАНИЕ (0/3)</button>
-        </div>
+    <h1>ЛОББИ</h1>
+    <div class="glass-card">
+        <div id="status" class="status-label" style="color: #ff4444;">ПОДКЛЮЧЕНИЕ...</div>
+        <div id="player-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <button id="start-btn" class="bold-btn" disabled>НУЖНО 3 ИГРОКА</button>
+        <button onclick="checkDebug()" style="background:none; border:none; color:#333; font-size:10px; margin-top:10px;">DEBUG</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#0a0a0a');
 
-        // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА ИЗ NGROK
+        // СЮДА СТАВЬ ССЫЛКУ ИЗ NGROK
         const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
 
-        const user = tg.initDataUnsafe?.user;
-        const myName = user ? (user.first_name || user.username) : "Аноним";
+        const myName = tg.initDataUnsafe?.user?.first_name || "Игрок";
 
         async function sync() {
-            const statusEl = document.getElementById('status');
-            const listEl = document.getElementById('player-list');
-            const btnEl = document.getElementById('start-btn');
-
             try {
-                // 1. Пытаемся зайти
-                const joinResponse = await fetch(`${SERVER_URL}/join`, {
+                // ОТПРАВЛЯЕМ ЗАПРОС С ЗАГОЛОВКОМ ДЛЯ ОБХОДА NGROK WARNING
+                const response = await fetch(`${SERVER_URL}/join`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true' // ВОТ ОНО, РЕШЕНИЕ
+                    },
                     body: JSON.stringify({ name: myName })
                 });
 
-                if (joinResponse.ok) {
-                    // 2. Получаем список игроков
-                    const playersResponse = await fetch(`${SERVER_URL}/players`);
-                    const data = await playersResponse.json();
+                if (response.ok) {
+                    const playersRes = await fetch(`${SERVER_URL}/players`, {
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    const data = await playersRes.json();
                     
-                    // Обновляем UI
-                    statusEl.innerText = "СВЯЗЬ УСТАНОВЛЕНА";
-                    statusEl.style.color = "var(--green)";
-                    
-                    listEl.innerHTML = data.players.map(p => `
-                        <div class="player-item">
-                            <span>${p} ${p === myName ? " (ТЫ)" : ""}</span>
-                            <span style="color: var(--green)">●</span>
-                        </div>
-                    `).join('');
-
-                    const count = data.players.length;
-                    btnEl.disabled = count < 3;
-                    btnEl.innerText = count >= 3 ? "ПОГНАЛИ" : `ЖДЕМ ИГРОКОВ (${count}/3)`;
+                    render(data.players);
                 }
             } catch (err) {
-                console.error("Ошибка:", err);
-                statusEl.innerText = "СЕРВЕР ОФФЛАЙН";
-                statusEl.style.color = "#ff4444";
+                document.getElementById('status').innerText = "СЕРВЕР ОФФЛАЙН";
+                console.error(err);
             }
         }
 
-        // Запуск цикла
+        function render(players) {
+            const list = document.getElementById('player-list');
+            const btn = document.getElementById('start-btn');
+            const status = document.getElementById('status');
+
+            status.innerText = "СВЯЗЬ УСТАНОВЛЕНА";
+            status.style.color = "var(--green)";
+            
+            list.innerHTML = players.map(p => `<div class="player-item"><span>${p}</span><span style="color:var(--green)">●</span></div>`).join('');
+            
+            if(players.length >= 3) {
+                btn.disabled = false;
+                btn.innerText = "ПОГНАЛИ";
+                btn.onclick = () => tg.showAlert("Игра начинается!");
+            } else {
+                btn.disabled = true;
+                btn.innerText = `ЖДЕМ (${players.length}/3)`;
+            }
+        }
+
+        function checkDebug() {
+            tg.showAlert(`URL: ${SERVER_URL}\nUser: ${myName}`);
+        }
+
         setInterval(sync, 2000);
         sync();
     </script>
