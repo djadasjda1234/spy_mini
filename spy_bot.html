@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Spy Arena Realtime</title>
+}
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
@@ -38,7 +39,14 @@
         const user = tg.initDataUnsafe?.user;
         const namePart = user ? (user.username || user.first_name) : "Игрок";
         const myFullName = `${namePart}#${Math.floor(1000 + Math.random() * 9000)}`;
+        <button id="start-btn" class="bold-btn" onclick="startGame()" disabled>ЖДЕМ (0/3)</button>
 
+        async function startGame() {
+            await fetch(`${SERVER_URL}/start_game`, { 
+                method: 'POST', 
+                headers: {'ngrok-skip-browser-warning': 'true'} 
+            });
+        }
         async function update() {
             try {
                 await fetch(`${SERVER_URL}/join`, {
@@ -61,7 +69,9 @@
             const list = document.getElementById('player-list');
             const btn = document.getElementById('start-btn');
             const status = document.getElementById('status');
-
+if(data.game_active) {
+    window.location.href = "game.html"; // Если кто-то нажал старт, все летят в игру
+}
             status.innerText = "В СЕТИ";
             status.style.color = "var(--green)";
             
