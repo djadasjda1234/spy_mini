@@ -20,7 +20,17 @@
         .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .grid-vote { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .v-btn { background: var(--card); border: 1px solid #333; color: #fff; padding: 20px; border-radius: 15px; font-weight: 700; }
-        .emergency-btn { background: #200; color: #844; border: none; border-radius: 10px; padding: 8px; font-size: 9px; font-weight: 900; width: 100%; margin-top: auto; text-transform: uppercase; cursor: pointer; }
+        
+        /* НОВАЯ КРУГЛАЯ КНОПКА СБРОСА */
+        .circle-reset {
+            background: #300; color: var(--red); border: 1px solid #500;
+            width: 24px; height: 24px; border-radius: 50%;
+            font-size: 18px; line-height: 22px; font-weight: 900;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            margin-top: 5px; margin-left: auto; transition: 0.2s;
+        }
+        .circle-reset:active { transform: scale(0.9); background: var(--red); color: #fff; }
+
         #turn-indicator { text-align: center; font-size: 11px; margin-bottom: 10px; padding: 5px; border-radius: 10px; background: #111; color: #aaa; }
     </style>
 </head>
@@ -37,6 +47,9 @@
     <div id="screen-lobby" class="hidden">
         <h1 style="text-align:center; font-size:28px;">ЛОББИ</h1>
         <div class="glass-card">
+            <div style="display: flex; justify-content: flex-end;">
+                <div class="circle-reset" onclick="triggerReset()">×</div>
+            </div>
             <div id="player-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
             <button id="start-btn" class="btn" onclick="startGame()" disabled>ЖДЕМ ИГРОКОВ</button>
         </div>
@@ -44,15 +57,18 @@
 
     <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
         <div class="glass-card" style="padding: 15px; margin-bottom: 5px;">
-            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900;">
-                <div id="g-role">РОЛЬ</div>
-                <div id="g-round">КРУГ 1/3</div>
+            <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                <div id="g-role" style="font-size:10px; font-weight:900;">РОЛЬ</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <div id="g-round" style="font-size:10px; font-weight:900; color:#555;">КРУГ 1/3</div>
+                    <div class="circle-reset" onclick="triggerReset()">×</div>
+                </div>
             </div>
             <div id="g-word" style="font-size:24px; font-weight:900; margin-top:5px;">...</div>
             <div id="g-category" style="font-size:11px; color: var(--green);">КАТЕГОРИЯ: ...</div>
         </div>
         
-        <div id="turn-indicator">ЗАГРУЗКА ХОДА...</div>
+        <div id="turn-indicator">ЗАГРУЗКА...</div>
 
         <div id="chat-box"></div>
         
@@ -62,20 +78,19 @@
         </div>
     </div>
 
-    <button id="main-reset-btn" class="emergency-btn hidden" onclick="triggerReset()">Экстренный сброс (на главную)</button>
-
     <div id="overlay-vote" class="overlay hidden">
+        <div class="circle-reset" style="position: absolute; top: 20px; right: 20px;" onclick="triggerReset()">×</div>
         <h2>КТО ШПИОН?</h2>
         <div id="vote-list" class="grid-vote"></div>
     </div>
     <div id="overlay-spy" class="overlay hidden">
-        <h2 style="color:var(--red)">ТЫ РАСКРЫТ!</h2>
-        <input id="spy-in" style="text-align:center;" placeholder="Какое слово?">
+        <h2>ТЫ РАСКРЫТ!</h2>
+        <input id="spy-in" style="text-align:center;" placeholder="Слово...">
         <button class="btn" onclick="sendSpyGuess()">ОТВЕТИТЬ</button>
     </div>
     <div id="overlay-res" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
-            <h1 style="color:var(--green)">ФИНАЛ</h1>
+            <h1 style="color:var(--green)">ИТОГИ</h1>
             <p id="res-spy" style="margin: 15px 0;"></p>
             <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
         </div>
@@ -90,7 +105,6 @@
 
         if (myName) {
             document.getElementById('screen-auth').classList.add('hidden');
-            document.getElementById('main-reset-btn').classList.remove('hidden');
             startPolling();
         }
 
@@ -100,7 +114,6 @@
             myName = val + "#" + Math.floor(1000 + Math.random() * 9000);
             sessionStorage.setItem('spy_nick', myName);
             document.getElementById('screen-auth').classList.add('hidden');
-            document.getElementById('main-reset-btn').classList.remove('hidden');
             startPolling();
         }
 
@@ -123,7 +136,7 @@
                     document.getElementById('screen-game').classList.remove('hidden');
                     updateGame(d);
                 }
-            } catch (e) { console.log("error"); }
+            } catch (e) { console.log("Net error"); }
         }
 
         async function updateLobby() {
@@ -133,7 +146,6 @@
             const btn = document.getElementById('start-btn');
             btn.disabled = data.players.length < 3;
             btn.innerText = data.players.length >= 3 ? "НАЧАТЬ ИГРУ" : `ЖДЕМ (${data.players.length}/3)`;
-            document.getElementById('vote-list').innerHTML = "";
         }
 
         function updateGame(d) {
@@ -143,7 +155,6 @@
             document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + (d.category || "???");
             document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
 
-            // ОБНОВЛЕНИЕ ИНДИКАТОРА ХОДА
             const indicator = document.getElementById('turn-indicator');
             if (d.phase === 'CHAT') {
                 if (d.is_my_turn) {
@@ -182,7 +193,7 @@
         }
 
         async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); }
-        async function triggerReset() { if(confirm("Сбросить для всех?")) await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); }
+        async function triggerReset() { if(confirm("Сбросить игру?")) await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); }
         async function sendMsg() {
             const input = document.getElementById('chat-in');
             const val = input.value.trim(); if(!val) return; input.value = "";
