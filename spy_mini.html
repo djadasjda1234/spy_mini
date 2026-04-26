@@ -14,6 +14,7 @@
         .btn { background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; text-transform: uppercase; cursor: pointer; }
         .btn:disabled { background: #222; color: #555; }
         .btn-risk { background: #441010; color: var(--red); border: 1px solid var(--red); padding: 10px; border-radius: 12px; font-size: 10px; margin-top: 10px; width: auto; font-weight: 900; cursor: pointer; }
+        .btn-exit { background: #222; color: #aaa; padding: 10px; border-radius: 12px; font-size: 10px; border: 1px solid #333; cursor: pointer; font-weight: 900; }
         input { width: 100%; background: #000 !important; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
@@ -40,12 +41,15 @@
         <div class="glass-card" style="width: 100%;">
             <input id="room-input" type="text" placeholder="ID Комнаты" onkeydown="if(event.key==='Enter') confirmRoom()">
             <button class="btn" onclick="confirmRoom()">ВОЙТИ</button>
-            <button class="btn" style="background:#222; margin-top:10px; font-size:10px;" onclick="localStorage.clear(); location.reload();">СМЕНИТЬ НИК</button>
+            <button class="btn-exit" style="margin-top: 20px; width: 100%;" onclick="localStorage.removeItem('spy_nick'); location.reload();">СМЕНИТЬ НИК</button>
         </div>
     </div>
 
     <div id="screen-lobby" class="hidden">
-        <h1 style="text-align:center;">КОМНАТА: <span id="display-room"></span></h1>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <button class="btn-exit" onclick="leaveRoom()">← ВЫЙТИ</button>
+            <h3 style="margin:0;">КОМНАТА: <span id="display-room"></span></h3>
+        </div>
         <div class="glass-card">
             <div style="display: flex; justify-content: flex-end;"><div class="circle-reset" onclick="triggerReset()">×</div></div>
             <div id="player-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
@@ -62,7 +66,10 @@
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
                     <div id="g-round" style="font-size:10px; font-weight:900; color:#555;">КРУГ 1/3</div>
-                    <div class="circle-reset" onclick="triggerReset()">×</div>
+                    <div style="display:flex; gap:10px; align-items: center;">
+                        <button class="btn-exit" style="padding: 5px 10px;" onclick="leaveRoom()">ВЫХОД</button>
+                        <div class="circle-reset" onclick="triggerReset()">×</div>
+                    </div>
                 </div>
             </div>
             <div id="g-word" style="font-size:24px; font-weight:900;">...</div>
@@ -97,6 +104,7 @@
             <p id="res-msg"></p>
             <p id="res-spy-name" style="color:#aaa; font-size:12px;"></p>
             <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
+            <button class="btn-exit" style="margin-top:10px; width:100%;" onclick="leaveRoom()">ВЫЙТИ ИЗ КОМНАТЫ</button>
         </div>
     </div>
 
@@ -104,11 +112,10 @@
         const tg = window.Telegram.WebApp; tg.expand();
         const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
         
-        // Используем localStorage для сохранения данных навсегда
         let myName = localStorage.getItem('spy_nick') || "";
         let myRoom = localStorage.getItem('spy_room') || "";
+        let pollInterval = null;
 
-        // Инициализация при загрузке
         if (!myName) {
             document.getElementById('screen-auth').classList.remove('hidden');
         } else if (!myRoom) {
@@ -135,6 +142,13 @@
             startPolling();
         }
 
+        function leaveRoom() {
+            if(confirm("Выйти в меню выбора комнат?")) {
+                localStorage.removeItem('spy_room');
+                location.reload();
+            }
+        }
+
         function toggleRiskMenu(show) { 
             document.getElementById('overlay-risk').classList.toggle('hidden', !show); 
             if(show) setTimeout(()=>document.getElementById('risk-input').focus(), 100);
@@ -142,7 +156,8 @@
 
         function startPolling() { 
             document.getElementById('display-room').innerText = myRoom;
-            setInterval(mainLoop, 2000); 
+            if(pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(mainLoop, 2000); 
             mainLoop(); 
         }
 
@@ -195,7 +210,6 @@
             chatIn.disabled = !d.is_my_turn || d.phase !== 'CHAT';
             sendBtn.disabled = !d.is_my_turn || d.phase !== 'CHAT';
             
-            // Фокус для ПК при наступлении хода
             if(d.is_my_turn && chatIn.dataset.lastTurn !== "true") {
                 chatIn.focus();
                 chatIn.dataset.lastTurn = "true";
