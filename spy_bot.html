@@ -41,31 +41,29 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        const SERVER_URL = "ТВОЯ_ССЫЛКА_ИЗ_NGROK"; // Вставь сюда ссылку от ngrok
 
-        let playersCount = 1;
+async function refreshLobby() {
+    try {
+        // Сообщаем серверу, что мы зашли
+        await fetch(`${https://joystick-roast-unable.ngrok-free.dev}/join`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name: myName })
+        });
 
-        // Имитация присоединения игроков для теста
-        // В реальности тут будет запрос к CloudStorage или боту
-        function simulatePlayers() {
-            if (playersCount < 3) {
-                playersCount++;
-                const list = document.getElementById('player-list');
-                const status = document.getElementById('lobby-status');
-                const btn = document.getElementById('start-btn');
+        // Получаем список всех игроков
+        const response = await fetch(`${SERVER_URL}/players`);
+        const data = await response.json();
+        renderPlayers(data.players);
+    } catch (e) {
+        console.error("Ошибка сервера:", e);
+        document.getElementById('lobby-status').innerText = "ОШИБКА ПОДКЛЮЧЕНИЯ";
+    }
+}
 
-                list.innerHTML += `<div class="player-badge"><span>Игрок ${playersCount}</span> <span>✅</span></div>`;
-                status.innerText = `Ожидание игроков (${playersCount}/3)`;
-
-                if (playersCount === 3) {
-                    status.innerText = "Все в сборе!";
-                    status.style.color = "#00ff00";
-                    btn.disabled = false;
-                    btn.innerText = "ПОГНАЛИ";
-                }
-            }
-        }
+// Запускаем авто-обновление каждые 2 секунды
+setInterval(refreshLobby, 2000);
 
         // Запускаем имитацию через 3 и 6 секунд
         setTimeout(simulatePlayers, 3000);
