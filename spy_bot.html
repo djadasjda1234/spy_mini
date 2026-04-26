@@ -3,135 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SPY GAME</title>
+    <title>Spy Arena Bold</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg: #0a0a0a;
-            --card-bg: #161616;
-            --primary: #7b2cbf;
+            /* Фиолетовая палитра без лишнего неона */
+            --bg: #0d0d0f;
+            --card-bg: #1a1a1d;
+            --primary: #8a2be2; /* Глубокий фиолетовый */
             --primary-light: #9d4edd;
-            --text: #ffffff;
+            --text-main: #ffffff;
+            --text-secondary: #a0a0a0;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
             height: 100vh;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
-        .screen { display: none; flex-direction: column; height: 100%; }
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .active { display: flex; }
 
-        /* Жирный, мощный заголовок */
+        /* Жирный, массивный заголовок на всю ширину */
         h1 {
-            font-size: 42px;
+            font-size: 48px;
             font-weight: 900;
             line-height: 1;
-            margin: 20px 0;
+            margin: 10px 0 30px 0;
             text-transform: uppercase;
-            background: linear-gradient(180deg, #fff 0%, #7b2cbf 100%);
+            text-align: center;
+            width: 100%;
+            background: linear-gradient(180deg, #fff 0%, var(--primary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        h2 { font-size: 24px; font-weight: 900; margin-bottom: 10px; }
-
-        /* Карточка без лишнего блюра, просто солидная */
-        .main-card {
-            background: var(--card-bg);
+        /* Карточка на всю ширину */
+        .glass-card {
+            background-color: var(--card-bg);
+            width: 100%;
             border-radius: 24px;
-            padding: 24px;
-            border: 1px solid #262626;
+            padding: 25px;
+            border: 1px solid #2d2d31;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        /* Кнопка: массивная и тактильная */
+        /* Заголовок карточки */
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Массивные кнопки на всю ширину */
         .bold-btn {
-            background: var(--primary);
-            color: white;
+            background-color: var(--primary);
+            color: #ffffff;
             border: none;
-            padding: 20px;
             border-radius: 18px;
+            padding: 18px 20px;
             font-size: 18px;
             font-weight: 900;
             text-transform: uppercase;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
-            margin-bottom: 12px;
+            transition: transform 0.1s, background-color 0.2s;
+            width: 100%; /* ТЕПЕРЬ НА ВСЮ ШИРИНУ */
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
+            box-sizing: border-box;
         }
 
+        /* Тактильный эффект при нажатии */
         .bold-btn:active {
             transform: scale(0.96);
-            background: var(--primary-light);
+            background-color: var(--primary-light);
         }
 
-        /* Поле ввода */
-        .bold-input {
-            background: #262626;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            padding: 16px;
-            color: white;
-            font-size: 16px;
-            font-family: inherit;
-            font-weight: 700;
-            outline: none;
-        }
+        .btn-icon { font-size: 20px; }
 
-        .bold-input:focus {
-            border-color: var(--primary);
-        }
-
-        /* Чат */
-        .chat-box {
+        /* Чат (для экрана игры) */
+        .chat-container {
+            width: 100%;
             flex-grow: 1;
+            background: rgba(0,0,0,0.2);
+            border-radius: 18px;
+            padding: 15px;
             overflow-y: auto;
             margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .msg {
-            background: #262626;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-weight: 700;
-            max-width: 85%;
-            line-height: 1.4;
-        }
-
-        .msg-own { background: var(--primary); align-self: flex-end; }
-
-        /* Плашка со словом */
-        .word-banner {
-            font-size: 48px;
-            font-weight: 900;
-            color: #fff;
-            text-align: center;
-            padding: 30px 0;
-            letter-spacing: -1px;
-        }
-
-        .status-bar {
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary-light);
-            margin-bottom: 5px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -139,86 +128,35 @@
 
     <div id="scr-menu" class="screen active">
         <h1>ШПИОН</h1>
-        <div class="main-card">
-            <div class="status-bar">Выбор режима</div>
-            <div style="display: flex; flex-direction: column;">
-                <button class="bold-btn" onclick="go('Brawl Stars')">BRAWL STARS</button>
-                <button class="bold-btn" onclick="go('Русский рэп')">РУССКИЙ РЭП</button>
-                <button class="bold-btn" style="background: #333;" onclick="go('Clash Royale')">CLASH ROYALE</button>
-            </div>
+        <div class="glass-card">
+            <h2>ВЫБЕРИ РЕЖИМ</h2>
+            <button class="bold-btn" onclick="go('Brawl Stars')">
+                <span class="btn-icon">🎮</span> BRAWL STARS
+            </button>
+            
+            <button class="bold-btn" onclick="go('Русский рэп')">
+                <span class="btn-icon">🎤</span> РУССКИЙ РЭП
+            </button>
+            
+            <button class="bold-btn" style="background-color: #444;" onclick="go('Clash Royale')">
+                <span class="btn-icon">👑</span> CLASH ROYALE
+            </button>
         </div>
     </div>
 
-    <div id="scr-role" class="screen">
-        <div class="status-bar">Твоя секретная роль</div>
-        <div class="word-banner" id="word">СЛОВО</div>
-        <div class="main-card">
-            <h2>ЗАПОМНИ ЭТО.</h2>
-            <p style="font-weight: 700; opacity: 0.6; margin-bottom: 20px;">Твоя задача — не спалиться или вычислить крысу.</p>
-            <button class="bold-btn" style="width: 100%" onclick="show('scr-game')">Я В ДЕЛЕ</button>
-        </div>
-    </div>
-
-    <div id="scr-game" class="screen">
-        <div class="status-bar" id="round-info">РАУНД 1 / 3</div>
-        <div class="chat-box" id="chat">
-            <div class="msg">Игра началась. Ждем твоих ассоциаций.</div>
-        </div>
-        
-        <div style="display: flex; gap: 10px; padding-bottom: 10px;">
-            <input type="text" id="msg-in" class="bold-input" style="flex-grow: 1;" placeholder="Пиши сюда...">
-            <button class="bold-btn" style="margin: 0; width: 60px;" onclick="send()">✅</button>
-        </div>
-    </div>
-
-    <div id="scr-vote" class="screen">
-        <h1>КТО ОН?</h1>
-        <div id="v-list" style="display: flex; flex-direction: column;">
-            </div>
-    </div>
+    <div id="scr-role" class="screen">...</div>
+    <div id="scr-game" class="screen">...</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#0a0a0a');
-
-        let r = 1;
-
-        function show(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        tg.setHeaderColor('#0d0d0f');
 
         function go(topic) {
-            const words = {'Brawl Stars': 'ЛЕОН', 'Русский рэп': 'МАКС КОРЖ', 'Clash Royale': 'ПЕККА'};
-            document.getElementById('word').innerText = words[topic] || 'КРЫСА';
-            show('scr-role');
-        }
-
-        function send() {
-            const inp = document.getElementById('msg-in');
-            if(!inp.value) return;
-
-            const chat = document.getElementById('chat');
-            chat.innerHTML += `<div class="msg msg-own">${inp.value}</div>`;
-            chat.scrollTop = chat.scrollHeight;
-
-            if (r < 3) {
-                r++;
-                document.getElementById('round-info').innerText = `РАУНД ${r} / 3`;
-            } else {
-                setTimeout(() => {
-                    show('scr-vote');
-                    renderVotes();
-                }, 600);
-            }
-            inp.value = '';
-        }
-
-        function renderVotes() {
-            const list = document.getElementById('v-list');
-            const players = ['Игрок 1', 'Игрок 2', 'Шпион'];
-            list.innerHTML = players.map(p => `<button class="bold-btn" onclick="tg.close()">${p}</button>`).join('');
+            // Имитация данных (пока для теста)
+            console.log("Выбрана тема:", topic);
+            tg.sendData(JSON.stringify({type: 'set_topic', topic: topic}));
+            tg.close(); // В тестовом варианте закрываем
         }
     </script>
 </body>
