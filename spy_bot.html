@@ -3,84 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Game Pro</title>
+    <title>Spy Arena</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #1a1033;
-            --card: #2d1b5a;
-            --accent: #9d4edd;
-            --text: #ffffff;
+            --bg: #0f0821;
+            --card: #1d1139;
+            --accent: #7b2cbf;
+            --accent-light: #9d4edd;
+            --text: #e0aaff;
         }
         body {
             background: var(--bg); color: var(--text);
-            font-family: sans-serif; margin: 0; padding: 20px;
-            display: flex; flex-direction: column; height: 100vh;
+            font-family: 'Inter', sans-serif; margin: 0; padding: 15px;
+            display: flex; flex-direction: column; align-items: center;
         }
-        .screen { display: none; flex-direction: column; gap: 15px; }
+        .screen { display: none; width: 100%; flex-direction: column; animation: fadeIn 0.3s; }
         .active { display: flex; }
         
-        .card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header { font-size: 24px; font-weight: 900; margin: 20px 0; text-align: center; color: white; text-shadow: 0 0 10px var(--accent-light); }
+        
+        .card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #3c2a61; margin-bottom: 15px; }
+
         .btn {
-            background: var(--accent); color: white; border: none;
-            padding: 15px; border-radius: 12px; font-weight: bold; font-size: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white; border: none; padding: 18px; border-radius: 15px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(123, 44, 191, 0.4);
         }
-        .word-box { font-size: 24px; color: #ff9e00; text-align: center; margin: 20px 0; font-weight: 900; }
-        .history { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; height: 200px; overflow-y: auto; }
+        .btn:active { transform: scale(0.98); filter: brightness(1.2); }
+
+        .player-list { list-style: none; padding: 0; }
+        .player-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+
+        .word-display { font-size: 32px; font-weight: 900; text-align: center; color: #ff9e00; margin: 20px 0; }
     </style>
 </head>
 <body>
 
-    <div id="screen-start" class="screen active">
-        <h1>Выбор битвы</h1>
-        <button class="btn" onclick="nextScreen('screen-word', 'Brawl Stars')">🎮 Brawl Stars</button>
-        <button class="btn" onclick="nextScreen('screen-word', 'Русский рэп')">🎤 Русский рэп</button>
+    <div id="screen-lobby" class="screen active">
+        <div class="header">SPY ARENA</div>
+        <div class="card">
+            <h3>🎮 Выбери тему битвы</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn" onclick="startGame('Brawl Stars')">Brawl Stars</button>
+                <button class="btn" onclick="startGame('Русский рэп')">Русский рэп</button>
+                <button class="btn" onclick="startGame('Clash Royale')">Clash Royale</button>
+            </div>
+        </div>
     </div>
 
-    <div id="screen-word" class="screen">
-        <div class="card">
-            <h2>Твоя секретная роль:</h2>
-            <div id="secret-word" class="word-box">ЗАГРУЗКА...</div>
-            <p>Никому не показывай экран!</p>
-            <button class="btn" onclick="nextScreen('screen-battle')">В БОЙ!</button>
+    <div id="screen-prep" class="screen">
+        <div class="header">ТВОЯ РОЛЬ</div>
+        <div class="card" style="text-align: center;">
+            <p>Твое секретное слово:</p>
+            <div id="role-word" class="word-display">СКРИПТОНИТ</div>
+            <p style="font-size: 12px; opacity: 0.6;">Запомни его и нажми готов</p>
+            <button class="btn" style="width: 100%;" onclick="showScreen('screen-battle')">Я ГОТОВ!</button>
         </div>
     </div>
 
     <div id="screen-battle" class="screen">
+        <div class="header">АРЕНА</div>
         <div class="card">
-            <h3>Раунд 1/3</h3>
-            <div class="history" id="chat-log">
-                <i>Ожидание ходов игроков...</i>
+            <div id="battle-info" style="margin-bottom: 10px;">Раунд 1/3 — Ход игрока: <b>Ты</b></div>
+            <div id="chat-area" style="height: 150px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; overflow-y: auto; margin-bottom: 10px; font-size: 14px;">
+                <div style="color: #9d4edd;">[Система] Битва началась!</div>
             </div>
-            <input type="text" id="input-desc" placeholder="Твоя ассоциация..." style="padding: 10px; border-radius: 5px; border: none; margin-top: 10px;">
-            <button class="btn" onclick="sendMove()">ОТПРАВИТЬ ХОД</button>
+            <input type="text" id="move-input" placeholder="Введите ассоциацию..." style="width: 100%; padding: 12px; border-radius: 10px; border: none; background: #0f0821; color: white; box-sizing: border-box;">
+            <button class="btn" style="width: 100%; margin-top: 10px;" onclick="makeMove()">ОТПРАВИТЬ ХОД</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.setHeaderColor('#0f0821');
 
-        function nextScreen(screenId, topic = null) {
+        function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-            
-            if(topic) {
-                // Имитация получения слова (в реале это пришлет бот)
-                document.getElementById('secret-word').innerText = topic === 'Brawl Stars' ? 'ЛЕОН' : 'СКРИПТОНИТ';
-            }
+            document.getElementById(id).classList.add('active');
         }
 
-        function sendMove() {
-            const val = document.getElementById('input-desc').value;
-            if(!val) return;
+        function startGame(topic) {
+            // В реальной игре тут будет запрос к боту
+            document.getElementById('role-word').innerText = topic === 'Brawl Stars' ? 'ЛЕОН' : 'СКРИПТОНИТ';
+            showScreen('screen-prep');
+        }
+
+        function makeMove() {
+            const input = document.getElementById('move-input');
+            if(!input.value) return;
+
+            const chat = document.getElementById('chat-area');
+            chat.innerHTML += `<div><b>Ты:</b> ${input.value}</div>`;
+            chat.scrollTop = chat.scrollHeight;
             
-            const log = document.getElementById('chat-log');
-            log.innerHTML += `<div><b>Ты:</b> ${val}</div>`;
-            document.getElementById('input-desc').value = '';
+            // Отправляем данные боту (он закроет приложение, если не использовать CloudStorage)
+            // Но для "чётки" мы просто имитируем ход в интерфейсе
+            const moveData = { action: 'move', text: input.value };
+            tg.sendData(JSON.stringify(moveData));
             
-            // Отправляем данные боту, чтобы он обновил состояние игры для всех
-            tg.sendData(JSON.stringify({type: 'move', text: val}));
+            input.value = '';
         }
     </script>
 </body>
