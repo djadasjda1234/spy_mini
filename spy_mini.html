@@ -19,9 +19,23 @@
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
         .msg.me { align-self: flex-end; background: var(--primary); }
+        /* Стиль для рамочек игроков в лобби */
+        .player-badge { background: #1a1a1a; border: 1px solid #333; padding: 12px 15px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .grid-vote { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .circle-reset { background: #300; color: var(--red); border: 1px solid #500; width: 24px; height: 24px; border-radius: 50%; font-size: 18px; line-height: 22px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
+
+    <div id="overlay-confirm" class="overlay hidden">
+        <div class="glass-card" style="width:80%;">
+            <h3 id="confirm-text">Вы уверены?</h3>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn" style="background:#222;" onclick="closeConfirm()">НЕТ</button>
+                <button class="btn" id="confirm-yes-btn">ДА</button>
+            </div>
+        </div>
+    </div>
 
     <div id="screen-auth" class="overlay hidden">
         <h1 style="font-size: 32px;">SPY ARENA</h1>
@@ -32,52 +46,78 @@
     </div>
 
     <div id="screen-room-select" class="overlay hidden">
-        <h2>СЕССИЯ</h2>
+        <h2>ВЫБОР СЕССИИ</h2>
         <div class="glass-card" style="width: 100%;">
             <input id="room-input" type="text" placeholder="ID Комнаты">
             <button class="btn" onclick="confirmRoom()">ПРИСОЕДИНИТЬСЯ</button>
-            <button class="btn-exit" style="margin-top: 20px; width: 100%;" onclick="resetNick()">СМЕНИТЬ НИК</button>
+            <button class="btn-exit" style="margin-top: 20px; width: 100%; padding:15px;" onclick="resetNick()">СМЕНИТЬ НИК</button>
         </div>
     </div>
 
     <div id="main-content" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
+        
         <div id="screen-lobby" class="hidden">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button class="btn-exit" onclick="leaveRoom()">← ВЫХОД</button>
-                <h3 style="margin:0;">ROOM: <span id="display-room"></span></h3>
+                <button class="btn-exit" onclick="showConfirm('Выйти в меню?', leaveRoom)">← ВЫХОД</button>
+                <h3 style="margin:0; font-size:14px;">ROOM: <span id="display-room" style="color:var(--primary)"></span></h3>
             </div>
             <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:10px; color:#555;">ИГРОКИ:</span>
+                    <div class="circle-reset" onclick="showConfirm('Сбросить игру?', triggerReset)">×</div>
+                </div>
                 <div id="player-list"></div>
-                <button id="start-btn" class="btn" onclick="startGame()" style="margin-top:15px;">НАЧАТЬ</button>
+                <button id="start-btn" class="btn" onclick="startGame()" style="margin-top:15px;" disabled>ЖДЕМ ИГРОКОВ</button>
             </div>
         </div>
 
         <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
-            <div class="glass-card">
-                <div id="g-word" style="font-size:20px; font-weight:900;">...</div>
-                <div id="g-category" style="color:var(--green); font-size:12px;"></div>
-                <button class="btn-exit" onclick="leaveRoom()" style="margin-top:10px;">ВЫЙТИ</button>
+            <div class="glass-card" style="padding:15px; margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div id="g-role" style="font-size:10px; font-weight:900; color:var(--primary);">РОЛЬ</div>
+                    <div id="g-round" style="font-size:10px; color:#555;">КРУГ 1/3</div>
+                </div>
+                <div id="g-word" style="font-size:24px; font-weight:900; margin:10px 0;">...</div>
+                <div id="g-category" style="color:var(--green); font-size:11px; text-transform:uppercase;"></div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn-exit" onclick="showConfirm('Выйти?', leaveRoom)">ВЫЙТИ</button>
+                    <div class="circle-reset" onclick="showConfirm('Сброс?', triggerReset)">×</div>
+                </div>
             </div>
+            <div id="turn-indicator" style="text-align:center; font-size:11px; color:#aaa; margin-bottom:5px;"></div>
             <div id="chat-box"></div>
-            <input id="chat-in" placeholder="Ваш ответ..." onkeydown="if(event.key==='Enter') sendMsg()">
+            <div style="display:flex; gap:8px; background:var(--card); padding:8px; border-radius:18px;">
+                <input id="chat-in" style="margin-bottom:0; flex-grow:1; background:none; border:none;" placeholder="Твой ответ...">
+                <button class="btn" onclick="sendMsg()" style="width:60px; padding:0;">></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay-vote" class="overlay hidden"><h2>ГОЛОСОВАНИЕ</h2><div id="vote-list" class="grid-vote"></div></div>
+    <div id="overlay-res" class="overlay hidden">
+        <div class="glass-card" style="width:85%;">
+            <h1 style="color:var(--green)">ИТОГИ</h1>
+            <p id="res-msg"></p>
+            <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
         </div>
     </div>
 
     <script>
-        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // ОБНОВИ ЕСЛИ НУЖНО
-        
+        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
         let myName = localStorage.getItem('spy_nick');
         let myRoom = localStorage.getItem('spy_room');
 
+        function showConfirm(text, cb) {
+            document.getElementById('confirm-text').innerText = text;
+            document.getElementById('overlay-confirm').classList.remove('hidden');
+            document.getElementById('confirm-yes-btn').onclick = () => { cb(); closeConfirm(); };
+        }
+        function closeConfirm() { document.getElementById('overlay-confirm').classList.add('hidden'); }
+
         function init() {
-            if (!myName) {
-                showScreen('screen-auth');
-            } else if (!myRoom) {
-                showScreen('screen-room-select');
-            } else {
-                showScreen('main-content');
-                startPolling();
-            }
+            if (!myName) showScreen('screen-auth');
+            else if (!myRoom) showScreen('screen-room-select');
+            else { showScreen('main-content'); startPolling(); }
         }
 
         function showScreen(id) {
@@ -86,81 +126,91 @@
         }
 
         function confirmNick() {
-            const val = document.getElementById('nick-input').value.trim();
-            if (val.length < 2) return;
-            myName = val + "#" + Math.floor(1000 + Math.random() * 9000);
+            const v = document.getElementById('nick-input').value.trim();
+            if (v.length < 2) return;
+            myName = v + "#" + Math.floor(1000 + Math.random()*9000);
             localStorage.setItem('spy_nick', myName);
             init();
         }
 
         function confirmRoom() {
-            const val = document.getElementById('room-input').value.trim();
-            if (!val) return;
-            myRoom = val;
+            const v = document.getElementById('room-input').value.trim();
+            if (!v) return;
+            myRoom = v;
             localStorage.setItem('spy_room', myRoom);
             init();
         }
 
-        function leaveRoom() {
-            localStorage.removeItem('spy_room');
-            location.reload();
-        }
-
-        function resetNick() {
-            localStorage.removeItem('spy_nick');
-            location.reload();
-        }
+        function leaveRoom() { localStorage.removeItem('spy_room'); location.reload(); }
+        function resetNick() { localStorage.removeItem('spy_nick'); location.reload(); }
 
         function startPolling() {
             document.getElementById('display-room').innerText = myRoom;
             setInterval(async () => {
                 try {
-                    // Пинг сервера
-                    await fetch(`${SERVER_URL}/join`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
-                        body: JSON.stringify({ room: myRoom, name: myName })
-                    });
+                    await fetch(`${SERVER_URL}/join`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) });
+                    const r = await fetch(`${SERVER_URL}/game_data?room=${myRoom}&name=${encodeURIComponent(myName)}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+                    const d = await r.json();
 
-                    // Получение данных
-                    const res = await fetch(`${SERVER_URL}/game_data?room=${myRoom}&name=${encodeURIComponent(myName)}`, {
-                        headers: {'ngrok-skip-browser-warning': 'true'}
-                    });
-                    const data = await res.json();
-
-                    if (!data.active) {
+                    if (!d.active) {
                         document.getElementById('screen-lobby').classList.remove('hidden');
                         document.getElementById('screen-game').classList.add('hidden');
+                        document.getElementById('overlay-res').classList.add('hidden');
+                        document.getElementById('overlay-vote').classList.add('hidden');
                         updateLobby();
                     } else {
                         document.getElementById('screen-lobby').classList.add('hidden');
                         document.getElementById('screen-game').classList.remove('hidden');
-                        updateGame(data);
+                        updateGame(d);
                     }
-                } catch (e) {
-                    console.error("Ошибка связи с сервером");
-                }
+                } catch (e) {}
             }, 2000);
         }
 
         async function updateLobby() {
-            const res = await fetch(`${SERVER_URL}/players?room=${myRoom}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
-            const data = await res.json();
-            document.getElementById('player-list').innerHTML = data.players.map(p => `<div style="padding:5px;">• ${p}</div>`).join('');
+            const r = await fetch(`${SERVER_URL}/players?room=${myRoom}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+            const d = await r.json();
+            document.getElementById('player-list').innerHTML = d.players.map(p => `
+                <div class="player-badge">
+                    <span>${p}</span>
+                    ${p === myName ? '<span style="font-size:8px; color:var(--primary)">ВЫ</span>' : ''}
+                </div>`).join('');
+            const btn = document.getElementById('start-btn');
+            btn.disabled = d.players.length < 3;
+            btn.innerText = d.players.length >= 3 ? "НАЧАТЬ ИГРУ" : `ЖДЕМ (${d.players.length}/3)`;
         }
 
         function updateGame(d) {
             document.getElementById('g-word').innerText = d.word;
-            document.getElementById('g-category').innerText = d.category;
-            document.getElementById('chat-box').innerHTML = d.messages.map(m => `<div class="msg ${m.user === myName ? 'me' : ''}">${m.text}</div>`).join('');
+            document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + d.category;
+            document.getElementById('g-role').innerText = d.role;
+            document.getElementById('g-role').style.color = d.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
+            document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
+            document.getElementById('turn-indicator').innerText = d.is_my_turn ? "ТВОЙ ХОД" : `ХОДИТ: ${d.current_turn}`;
+            
+            document.getElementById('chat-box').innerHTML = d.messages.map(m => `
+                <div class="msg ${m.user === myName ? 'me' : ''}">
+                    <div style="font-size:8px; opacity:0.5;">${m.user}</div>${m.text}
+                </div>`).join('');
+
+            document.getElementById('overlay-vote').classList.toggle('hidden', d.phase !== 'VOTING');
+            document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
+            if(d.phase === 'RESULTS') document.getElementById('res-msg').innerText = d.result_msg;
+            if(d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
+                document.getElementById('vote-list').innerHTML = d.order.filter(p=>p!==myName).map(p=>`<button class="btn" onclick="sendVote('${p}')">${p}</button>`).join('');
+            }
         }
 
-        async function startGame() {
-            await fetch(`${SERVER_URL}/start_game`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
-                body: JSON.stringify({ room: myRoom, name: myName })
-            });
+        async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
+        async function triggerReset() { await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
+        async function sendMsg() {
+            const i = document.getElementById('chat-in');
+            const v = i.value.trim(); if(!v) return;
+            i.value = "";
+            await fetch(`${SERVER_URL}/send_message`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, text: v }) });
+        }
+        async function sendVote(t) {
+            await fetch(`${SERVER_URL}/vote`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, target: t }) });
         }
 
         init();
