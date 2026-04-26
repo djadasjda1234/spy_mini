@@ -3,58 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena</title>
+    <title>Spy Arena Realtime</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --green: #00ff88; }
+        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --green: #00ff88; --red: #ff4444; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; overflow: hidden; }
-        h1 { font-size: 42px; font-weight: 900; text-align: center; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
+        h1 { font-size: 42px; font-weight: 900; text-align: center; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 12px; }
         .player-item { background: #222; padding: 15px; border-radius: 16px; font-weight: 700; display: flex; justify-content: space-between; border-left: 5px solid var(--primary); font-size: 14px; }
         .bold-btn { background: var(--primary); color: white; border: none; padding: 20px; border-radius: 18px; font-size: 18px; font-weight: 900; text-transform: uppercase; width: 100%; transition: 0.2s; }
         .bold-btn:disabled { background: #262626; color: #555; }
-        .status { font-size: 10px; text-align: center; font-weight: 900; letter-spacing: 2px; }
+        /* СТИЛЬ КНОПКИ СБРОСА */
+        .reset-btn { background: none; border: 1px solid #333; color: #666; padding: 10px; border-radius: 12px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 10px; cursor: pointer; transition: 0.3s; }
+        .reset-btn:active { background: var(--red); color: white; border-color: var(--red); }
     </style>
 </head>
 <body>
 
     <h1>ЛОББИ</h1>
     <div class="glass-card">
-        <div id="status" class="status" style="color: #ff4444;">ПОДКЛЮЧЕНИЕ...</div>
+        <div id="status" style="text-align:center; font-size:10px; font-weight:900; color:#555;">СИНХРОНИЗАЦИЯ...</div>
         <div id="player-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-        <button id="start-btn" class="bold-btn" disabled>ОЖИДАНИЕ (0/3)</button>
+        <button id="start-btn" class="bold-btn" disabled>ЖДЕМ (0/3)</button>
+        <button class="reset-btn" onclick="triggerReset()">Сбросить всех игроков</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // ТВОЯ ССЫЛКА NGROK
+        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
 
-        // Генерируем уникальный ник один раз при входе
         const user = tg.initDataUnsafe?.user;
         const namePart = user ? (user.username || user.first_name) : "Игрок";
         const myFullName = `${namePart}#${Math.floor(1000 + Math.random() * 9000)}`;
 
         async function update() {
             try {
-                // Шлем сигнал, что мы живы
                 await fetch(`${SERVER_URL}/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
                     body: JSON.stringify({ name: myFullName })
                 });
 
-                // Получаем список только тех, кто тоже сейчас "стучит"
                 const res = await fetch(`${SERVER_URL}/players`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
                 const data = await res.json();
-                
                 render(data.players);
             } catch (e) {
-                document.getElementById('status').innerText = "ОФФЛАЙН";
+                document.getElementById('status').innerText = "ОШИБКА СЕТИ";
             }
         }
 
@@ -77,7 +76,21 @@
             btn.innerText = players.length >= 3 ? "ПОГНАЛИ" : `ЖДЕМ (${players.length}/3)`;
         }
 
-        // Запускаем пульс каждые 2 секунды
+        // ФУНКЦИЯ СБРОСА
+        async function triggerReset() {
+            if(confirm("Очистить список игроков?")) {
+                try {
+                    await fetch(`${SERVER_URL}/reset`, {
+                        method: 'POST',
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    location.reload(); // Перезагружаем страницу после сброса
+                } catch(e) {
+                    alert("Не удалось сбросить");
+                }
+            }
+        }
+
         setInterval(update, 2000);
         update();
     </script>
