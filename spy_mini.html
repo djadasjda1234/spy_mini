@@ -13,6 +13,7 @@
         .glass-card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #262626; margin-bottom: 10px; }
         .btn { background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; text-transform: uppercase; cursor: pointer; }
         .btn:disabled { background: #222; color: #555; }
+        .btn-risk { background: #441010; color: var(--red); border: 1px solid var(--red); padding: 10px; border-radius: 12px; font-size: 10px; margin-top: 10px; width: auto; font-weight: 900; }
         input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
@@ -36,10 +37,9 @@
 
     <div id="screen-room-select" class="overlay hidden">
         <h2>СЕССИЯ</h2>
-        <p style="color:#666; font-size:12px; margin-bottom:20px;">Введите ID комнаты, чтобы играть с друзьями</p>
         <div class="glass-card" style="width: 100%;">
-            <input id="room-input" type="text" placeholder="ID Комнаты (например: 777)" maxlength="10">
-            <button class="btn" onclick="confirmRoom()">ВОЙТИ В ЛОББИ</button>
+            <input id="room-input" type="text" placeholder="ID Комнаты" maxlength="10">
+            <button class="btn" onclick="confirmRoom()">ВОЙТИ</button>
         </div>
     </div>
 
@@ -57,7 +57,10 @@
     <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
         <div class="glass-card" style="padding: 15px; margin-bottom: 5px;">
             <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                <div id="g-role" style="font-size:10px; font-weight:900;">РОЛЬ</div>
+                <div>
+                    <div id="g-role" style="font-size:10px; font-weight:900;">РОЛЬ</div>
+                    <button id="risk-btn" class="btn-risk hidden" onclick="toggleRiskMenu(true)">УГАДАТЬ СЛОВО</button>
+                </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
                     <div id="g-round" style="font-size:10px; font-weight:900; color:#555;">КРУГ 1/3</div>
                     <div class="circle-reset" onclick="triggerReset()">×</div>
@@ -74,6 +77,16 @@
         </div>
     </div>
 
+    <div id="overlay-risk" class="overlay hidden">
+        <h2 style="color:var(--red)">ВА-БАНК</h2>
+        <p style="font-size:12px; color:#666; margin-bottom:20px;">Если ошибешься — ты проиграл!</p>
+        <div class="glass-card" style="width: 100%;">
+            <input id="risk-input" type="text" placeholder="Введите слово...">
+            <button class="btn" onclick="sendSpyGuess('risk')">ПОДТВЕРДИТЬ</button>
+            <button class="btn" style="background:#222; margin-top:10px;" onclick="toggleRiskMenu(false)">НАЗАД</button>
+        </div>
+    </div>
+
     <div id="overlay-vote" class="overlay hidden">
         <div class="circle-reset" style="position: absolute; top: 20px; right: 20px;" onclick="triggerReset()">×</div>
         <h2>КТО ШПИОН?</h2>
@@ -82,12 +95,13 @@
     <div id="overlay-spy" class="overlay hidden">
         <h2>ТЫ РАСКРЫТ!</h2>
         <input id="spy-in" style="text-align:center;" placeholder="Слово...">
-        <button class="btn" onclick="sendSpyGuess()">ОТВЕТИТЬ</button>
+        <button class="btn" onclick="sendSpyGuess('final')">ОТВЕТИТЬ</button>
     </div>
     <div id="overlay-res" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
             <h1 style="color:var(--green)">ИТОГИ</h1>
-            <p id="res-spy" style="margin: 15px 0;"></p>
+            <p id="res-msg" style="font-size: 14px; margin-bottom: 10px; color: var(--red); font-weight: 900;"></p>
+            <p id="res-spy" style="margin-bottom: 20px;"></p>
             <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
         </div>
     </div>
@@ -100,7 +114,6 @@
         let myName = sessionStorage.getItem('spy_nick') || "";
         let myRoom = sessionStorage.getItem('spy_room') || "";
 
-        // Логика последовательного входа
         if (!myName) {
             document.getElementById('screen-auth').classList.remove('hidden');
         } else if (!myRoom) {
@@ -128,6 +141,10 @@
             sessionStorage.setItem('spy_room', myRoom);
             document.getElementById('screen-room-select').classList.add('hidden');
             startPolling();
+        }
+
+        function toggleRiskMenu(show) {
+            document.getElementById('overlay-risk').classList.toggle('hidden', !show);
         }
 
         function startPolling() { 
@@ -176,6 +193,9 @@
             document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + (d.category || "???");
             document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
 
+            // Показываем кнопку риска только шпиону и только в фазе чата
+            document.getElementById('risk-btn').classList.toggle('hidden', d.role !== 'ШПИОН' || d.phase !== 'CHAT');
+
             const indicator = document.getElementById('turn-indicator');
             if (d.phase === 'CHAT') {
                 indicator.innerText = d.is_my_turn ? "★ ТВОЙ ХОД! ★" : `ПИШЕТ: ${d.current_turn}`;
@@ -201,15 +221,14 @@
             if (d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
                 document.getElementById('vote-list').innerHTML = d.order.filter(p => p !== myName).map(p => `<button class="v-btn" onclick="sendVote('${p}')">${p}</button>`).join('');
             }
-            if (d.phase === 'RESULTS') document.getElementById('res-spy').innerText = `Шпион: ${d.spy}`;
+            if (d.phase === 'RESULTS') {
+                document.getElementById('res-spy').innerText = `Шпион: ${d.spy}`;
+                document.getElementById('res-msg').innerText = d.result_msg;
+            }
         }
 
         async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
-        
-        async function triggerReset() { 
-            if(confirm("Сбросить эту комнату?")) 
-                await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); 
-        }
+        async function triggerReset() { if(confirm("Сбросить?")) await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
 
         async function sendMsg() {
             const input = document.getElementById('chat-in');
@@ -222,8 +241,10 @@
             await fetch(`${SERVER_URL}/vote`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, target: target }) });
         }
 
-        async function sendSpyGuess() {
-            const val = document.getElementById('spy-in').value;
+        async function sendSpyGuess(type) {
+            const field = type === 'risk' ? 'risk-input' : 'spy-in';
+            const val = document.getElementById(field).value;
+            if (type === 'risk') toggleRiskMenu(false);
             await fetch(`${SERVER_URL}/spy_guess`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, text: val }) });
         }
     </script>
