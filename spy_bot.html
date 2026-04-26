@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Spy Game Menu</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+        /* Основные настройки CSS */
+        :root {
+            /* Фиолетовая палитра */
+            --bg-color: #1a1033; /* Очень темный фиолетовый для фона */
+            --container-bg: #2d1b5a; /* Чуть светлее для блоков */
+            --text-color: #ffffff;
+            --accent-purple: #9d4edd; /* Яркий фиолетовый для кнопок */
+            --accent-hover: #c77dff; /* Светлый фиолетовый для наведения */
+            --glow: 0 0 15px rgba(157, 78, 221, 0.5); /* Эффект свечения */
+        }
+
+        /* Обнуление отступов и адаптация под TMA */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: flex-start;
+            overflow: hidden; /* Запрещаем скролл самого боди */
+        }
+
+        /* Контейнер приложения */
+        #app-container {
+            width: 100%;
+            max-width: 400px; /* Ограничение ширины для десктопа */
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Заголовок */
+        h1 {
+            font-size: 28px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            text-shadow: var(--glow);
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        /* Кнопочное меню */
+        .menu-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Отступ между кнопками */
+        }
+
+        /* Основной стиль фиолетовой кнопки */
+        .topic-btn {
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 18px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease; /* Плавная анимация */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Стили при наведении и нажатии (для ПК и TMA) */
+        .topic-btn:hover {
+            border-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--glow);
+        }
+
+        .topic-btn:active {
+            transform: translateY(1px);
+            background-color: #3b2475;
+        }
+
+        /* Иконки внутри кнопок */
+        .btn-icon {
+            margin-right: 15px;
+            font-size: 24px;
+            width: 30px;
+            text-align: center;
+        }
+
+        /* Футер Mini App (опционально) */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <h1>SPY GAME</h1>
+        <div class="subtitle">Выбери тему для старта лобби</div>
+
+        <div class="menu-container">
+            <button class="topic-btn" onclick="sendTopic('Brawl Stars')">
+                <span class="btn-icon">🎮</span> Brawl Stars
+            </button>
+            
+            <button class="topic-btn" onclick="sendTopic('Clash Royale')">
+                <span class="btn-icon">👑</span> Clash Royale
+            </button>
+            
+            <button class="topic-btn" onclick="sendTopic('Русский рэп')">
+                <span class="btn-icon">🎤</span> Русский рэп
+            </button>
+        </div>
+
+        <div class="footer">Spy TMA v1.0 | Фиолетовый стиль</div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App SDK
+        const tg = window.Telegram.WebApp;
+        
+        // Расширяем приложение на всю доступную высоту
+        tg.expand();
+        
+        // Устанавливаем цвет Header'а Telegram (верхней полоски) в цвет фона
+        tg.setHeaderColor('#1a1033');
+
+        // Функция отправки данных боту
+        function sendTopic(topicName) {
+            // Формируем JSON данные
+            const data = {
+                action: 'set_topic',
+                topic: topicName
+            };
+            
+            // Отправляем данные боту (работает только если TMA запущен через кнопку с web_app_info)
+            tg.sendData(JSON.stringify(data));
+            
+            // Закрываем Mini App
+            tg.close();
+        }
+    </script>
+</body>
+</html>
