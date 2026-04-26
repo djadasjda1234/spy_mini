@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy</title>
+    <title>Spy Arena</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --text: #fff; }
+        :root { --bg: #0d0d0f; --card: #1a1a1d; --primary: #8a2be2; --text: #fff; }
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
-        .screen { display: none; flex-direction: column; }
+        .screen { display: none; flex-direction: column; width: 100%; }
         .active { display: flex; }
-        h1 { font-size: 42px; font-weight: 900; text-align: center; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 10px 0; }
-        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
-        .bold-btn { background: var(--primary); color: #fff; border: none; border-radius: 18px; padding: 20px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-        .bold-btn:disabled { background: #222; color: #444; }
-        .player-row { background: #222; padding: 15px; border-radius: 12px; font-weight: 700; border-left: 4px solid var(--primary); margin-bottom: 8px; }
-        .status { color: var(--primary); font-size: 12px; font-weight: 900; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+        h1 { font-size: 42px; font-weight: 900; text-align: center; background: linear-gradient(180deg, #fff, var(--primary)); background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #2d2d31; display: flex; flex-direction: column; gap: 15px; }
+        .bold-btn { background: var(--primary); color: #fff; border: none; border-radius: 18px; padding: 18px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+        .bold-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+        .player-badge { background: #262626; padding: 15px; border-radius: 12px; font-weight: 700; display: flex; justify-content: space-between; }
+        .status { color: var(--primary); font-size: 12px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -24,11 +24,11 @@
     <div id="scr-lobby" class="screen active">
         <h1>ЛОББИ</h1>
         <div class="glass-card">
-            <div class="status" id="lobby-status">ПОДКЛЮЧЕНИЕ К СЕРВЕРУ...</div>
-            <div id="player-list">
+            <div class="status" id="lobby-status">Ожидание игроков (1/3)</div>
+            <div id="player-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="player-badge"><span>Ты</span> <span>✅</span></div>
                 </div>
-            <button id="start-btn" class="bold-btn" disabled onclick="showMenu()">ЖДЕМ ИГРОКОВ (0/3)</button>
-            <button class="bold-btn" style="background: #333; margin-top: 10px;" onclick="refreshLobby()">ОБНОВИТЬ СПИСОК</button>
+            <button id="start-btn" class="bold-btn" disabled onclick="showScreen('scr-menu')">ЖДЕМ ИГРОКОВ</button>
         </div>
     </div>
 
@@ -44,56 +44,41 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const user = tg.initDataUnsafe?.user;
-        const myName = user ? (user.first_name || user.username) : "Аноним";
+        let playersCount = 1;
 
-        // Функция получения списка игроков из "облака" Telegram
-        function refreshLobby() {
-            const status = document.getElementById('lobby-status');
-            status.innerText = "ОБНОВЛЕНИЕ...";
+        // Имитация присоединения игроков для теста
+        // В реальности тут будет запрос к CloudStorage или боту
+        function simulatePlayers() {
+            if (playersCount < 3) {
+                playersCount++;
+                const list = document.getElementById('player-list');
+                const status = document.getElementById('lobby-status');
+                const btn = document.getElementById('start-btn');
 
-            // В идеале здесь должен быть запрос к твоему Python серверу.
-            // Пока мы используем имитацию логики входа, но БЕЗ авто-добавления ботов.
-            // Чтобы это работало реально на 3-х устройствах, нужен бэкенд.
-            
-            renderPlayers([myName]); 
-        }
+                list.innerHTML += `<div class="player-badge"><span>Игрок ${playersCount}</span> <span>✅</span></div>`;
+                status.innerText = `Ожидание игроков (${playersCount}/3)`;
 
-        function renderPlayers(list) {
-            const container = document.getElementById('player-list');
-            const btn = document.getElementById('start-btn');
-            const status = document.getElementById('lobby-status');
-
-            container.innerHTML = list.map(p => `<div class="player-row">${p} ✅</div>`).join('');
-            
-            const count = list.length;
-            status.innerText = `В ОЧЕРЕДИ: ${count}/3`;
-
-            if (count >= 3) {
-                btn.disabled = false;
-                btn.innerText = "НАЧАТЬ ИГРУ";
-                status.style.color = "#00ff00";
-            } else {
-                btn.disabled = true;
-                btn.innerText = `НУЖНО ЕЩЕ ${3 - count}`;
+                if (playersCount === 3) {
+                    status.innerText = "Все в сборе!";
+                    status.style.color = "#00ff00";
+                    btn.disabled = false;
+                    btn.innerText = "ПОГНАЛИ";
+                }
             }
         }
 
-        function showMenu() {
-            document.getElementById('scr-lobby').classList.remove('active');
-            document.getElementById('scr-menu').classList.add('active');
+        // Запускаем имитацию через 3 и 6 секунд
+        setTimeout(simulatePlayers, 3000);
+        setTimeout(simulatePlayers, 6000);
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
         function startGame(topic) {
-            tg.showConfirm(`Выбрана тема: ${topic}. Начинаем?`, (ok) => {
-                if(ok) {
-                    // Переход к логике ролей
-                }
-            });
+            alert("Игра по теме " + topic + " началась!");
         }
-
-        // При запуске
-        refreshLobby();
     </script>
 </body>
 </html>
