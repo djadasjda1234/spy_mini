@@ -41,12 +41,12 @@
     </div>
 
     <script>
-        const SERVER_URL = "ТВОЯ_ССЫЛКА_ИЗ_NGROK"; // Вставь сюда ссылку от ngrok
+        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // Вставь сюда ссылку от ngrok
 
 async function refreshLobby() {
     try {
         // Сообщаем серверу, что мы зашли
-        await fetch(`${https://joystick-roast-unable.ngrok-free.dev}/join`, {
+        await fetch(`${SERVER_URL}/join`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ name: myName })
@@ -61,6 +61,9 @@ async function refreshLobby() {
         document.getElementById('lobby-status').innerText = "ОШИБКА ПОДКЛЮЧЕНИЯ";
     }
 }
+
+// Запускаем авто-обновление каждые 2 секунды
+setInterval(refreshLobby, 2000);
 
 // Запускаем авто-обновление каждые 2 секунды
 setInterval(refreshLobby, 2000);
