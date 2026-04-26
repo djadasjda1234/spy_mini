@@ -3,161 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena Ultimate</title>
+    <title>Spy Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --card: #161616;
-            --primary: #7b2cbf;
-            --primary-light: #9d4edd;
-            --text: #ffffff;
-            --accent-green: #00ff88;
-        }
+        :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --text: #fff; --green: #00ff88; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
+        
+        .screen { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        h1 { font-size: 48px; font-weight: 900; text-align: center; margin: 10px 0 30px 0; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .glass-card { background: var(--card); border-radius: 28px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
+        .status-label { font-size: 13px; font-weight: 900; text-transform: uppercase; text-align: center; letter-spacing: 1px; transition: 0.3s; }
+        
+        .player-item { background: #222; padding: 18px; border-radius: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--primary); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
+        .bold-btn { background: var(--primary); color: white; border: none; padding: 22px; border-radius: 20px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.2s; width: 100%; }
+        .bold-btn:disabled { background: #262626; color: #555; transform: none; }
+        .bold-btn:active:not(:disabled) { transform: scale(0.96); }
 
-        .screen { display: none; flex-direction: column; height: 100%; width: 100%; }
-        .active { display: flex; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        h1 {
-            font-size: 48px;
-            font-weight: 900;
-            text-align: center;
-            margin: 10px 0 30px 0;
-            text-transform: uppercase;
-            background: linear-gradient(180deg, #fff 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .glass-card {
-            background: var(--card);
-            border-radius: 28px;
-            padding: 25px;
-            border: 1px solid #262626;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .status-label {
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            color: var(--primary-light);
-            letter-spacing: 2px;
-            text-align: center;
-        }
-
-        /* Список игроков */
-        .player-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        .player-item {
-            background: #222;
-            padding: 18px;
-            border-radius: 18px;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 6px solid var(--primary);
-        }
-
-        .online-dot {
-            width: 10px;
-            height: 10px;
-            background: var(--accent-green);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-green);
-        }
-
-        /* Массивная кнопка */
-        .bold-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 22px;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 900;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .bold-btn:disabled {
-            background: #262626;
-            color: #555;
-            cursor: not-allowed;
-        }
-
-        .bold-btn:active:not(:disabled) {
-            transform: scale(0.96);
-            background: var(--primary-light);
-        }
-
-        .secondary-btn {
-            background: transparent;
-            border: 2px solid #333;
-            margin-top: 10px;
-        }
-
-        /* Вспомогательный текст */
-        .info-text {
-            text-align: center;
-            font-size: 14px;
-            opacity: 0.6;
-            font-weight: 700;
-            margin-top: auto;
-            padding-bottom: 20px;
-        }
+        #player-list { display: flex; flex-direction: column; gap: 10px; min-height: 50px; }
     </style>
 </head>
 <body>
 
-    <div id="scr-lobby" class="screen active">
+    <div id="scr-lobby" class="screen">
         <h1>ЛОББИ</h1>
         <div class="glass-card">
-            <div class="status-label" id="lobby-status">СКАНИРОВАНИЕ СЕТИ...</div>
-            <div class="player-list" id="player-list">
-                </div>
-            <button id="start-btn" class="bold-btn" disabled onclick="goToMenu()">
-                ОЖИДАНИЕ (0/3)
-            </button>
-        </div>
-        <div class="info-text">Для начала игры нужно 3 человека</div>
-    </div>
-
-    <div id="scr-menu" class="screen">
-        <h1>ВЫБОР</h1>
-        <div class="glass-card">
-            <div class="status-label">ВЫБЕРИТЕ КАТЕГОРИЮ</div>
-            <button class="bold-btn" onclick="finishSetup('Brawl Stars')">🎮 BRAWL STARS</button>
-            <button class="bold-btn" onclick="finishSetup('Русский рэп')">🎤 РУССКИЙ РЭП</button>
-            <button class="bold-btn" style="background:#333" onclick="finishSetup('Clash Royale')">👑 CLASH ROYALE</button>
-            <button class="bold-btn secondary-btn" onclick="resetLobby()">СБРОСИТЬ ЛОББИ</button>
+            <div id="status" class="status-label" style="color: #ff4444;">ПРОВЕРКА СВЯЗИ...</div>
+            <div id="player-list"></div>
+            <button id="start-btn" class="bold-btn" disabled>ОЖИДАНИЕ (0/3)</button>
         </div>
     </div>
 
@@ -166,82 +42,55 @@
         tg.expand();
         tg.setHeaderColor('#0a0a0a');
 
-        // !!! ЗАМЕНИ ЭТУ ССЫЛКУ НА СВОЮ ИЗ NGROK !!!
+        // ТВОЯ АКТУАЛЬНАЯ ССЫЛКА ИЗ NGROK
         const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
 
         const user = tg.initDataUnsafe?.user;
-        const myName = user ? (user.first_name || user.username) : "Игрок";
+        const myName = user ? (user.first_name || user.username) : "Аноним";
 
-        async function syncWithServer() {
+        async function sync() {
+            const statusEl = document.getElementById('status');
+            const listEl = document.getElementById('player-list');
+            const btnEl = document.getElementById('start-btn');
+
             try {
-                // 1. Сообщаем серверу, что мы здесь
-                await fetch(`${SERVER_URL}/join`, {
+                // 1. Пытаемся зайти
+                const joinResponse = await fetch(`${SERVER_URL}/join`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ name: myName })
                 });
 
-                // 2. Получаем актуальный список игроков
-                const response = await fetch(`${SERVER_URL}/players`);
-                const data = await response.json();
-                
-                updateUI(data.players);
-            } catch (err) {
-                document.getElementById('lobby-status').innerText = "СЕРВЕР ОФФЛАЙН";
-                console.error("Ошибка связи:", err);
-            }
-        }
+                if (joinResponse.ok) {
+                    // 2. Получаем список игроков
+                    const playersResponse = await fetch(`${SERVER_URL}/players`);
+                    const data = await playersResponse.json();
+                    
+                    // Обновляем UI
+                    statusEl.innerText = "СВЯЗЬ УСТАНОВЛЕНА";
+                    statusEl.style.color = "var(--green)";
+                    
+                    listEl.innerHTML = data.players.map(p => `
+                        <div class="player-item">
+                            <span>${p} ${p === myName ? " (ТЫ)" : ""}</span>
+                            <span style="color: var(--green)">●</span>
+                        </div>
+                    `).join('');
 
-        function updateUI(players) {
-            const listContainer = document.getElementById('player-list');
-            const startBtn = document.getElementById('start-btn');
-            const statusLabel = document.getElementById('lobby-status');
-
-            // Обновляем список на экране
-            listContainer.innerHTML = players.map(name => `
-                <div class="player-item">
-                    <span>${name} ${name === myName ? "(ТЫ)" : ""}</span>
-                    <div class="online-dot"></div>
-                </div>
-            `).join('');
-
-            const count = players.length;
-            
-            if (count >= 3) {
-                startBtn.disabled = false;
-                startBtn.innerText = "ПОГНАЛИ";
-                statusLabel.innerText = "ОТРЯД УКОМПЛЕКТОВАН";
-                statusLabel.style.color = "var(--accent-green)";
-            } else {
-                startBtn.disabled = true;
-                startBtn.innerText = `ЖДЕМ ИГРОКОВ (${count}/3)`;
-                statusLabel.innerText = "ПОИСК СОЮЗНИКОВ...";
-                statusLabel.style.color = "var(--primary-light)";
-            }
-        }
-
-        function goToMenu() {
-            document.getElementById('scr-lobby').classList.remove('active');
-            document.getElementById('scr-menu').classList.add('active');
-        }
-
-        async function resetLobby() {
-            await fetch(`${SERVER_URL}/reset`, { method: 'POST' });
-            location.reload();
-        }
-
-        function finishSetup(topic) {
-            tg.showConfirm(`Начать игру по теме ${topic}?`, (ok) => {
-                if(ok) {
-                    // Здесь в будущем будет переход к раздаче ролей
-                    tg.sendData(JSON.stringify({action: "start", topic: topic}));
+                    const count = data.players.length;
+                    btnEl.disabled = count < 3;
+                    btnEl.innerText = count >= 3 ? "ПОГНАЛИ" : `ЖДЕМ ИГРОКОВ (${count}/3)`;
                 }
-            });
+            } catch (err) {
+                console.error("Ошибка:", err);
+                statusEl.innerText = "СЕРВЕР ОФФЛАЙН";
+                statusEl.style.color = "#ff4444";
+            }
         }
 
-        // Запускаем бесконечный цикл обновления каждые 2 секунды
-        setInterval(syncWithServer, 2000);
-        syncWithServer(); // Первый запуск сразу
+        // Запуск цикла
+        setInterval(sync, 2000);
+        sync();
     </script>
 </body>
 </html>
