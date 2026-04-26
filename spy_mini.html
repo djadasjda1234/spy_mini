@@ -13,7 +13,7 @@
         .glass-card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #262626; margin-bottom: 10px; }
         .btn { background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; text-transform: uppercase; cursor: pointer; }
         .btn:disabled { background: #222; color: #555; }
-        .btn-risk { background: #441010; color: var(--red); border: 1px solid var(--red); padding: 10px; border-radius: 12px; font-size: 10px; margin-top: 10px; width: auto; font-weight: 900; }
+        .btn-risk { background: #441010; color: var(--red); border: 1px solid var(--red); padding: 10px; border-radius: 12px; font-size: 10px; margin-top: 10px; width: auto; font-weight: 900; cursor: pointer; }
         input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
@@ -79,16 +79,14 @@
 
     <div id="overlay-risk" class="overlay hidden">
         <h2 style="color:var(--red)">ВА-БАНК</h2>
-        <p style="font-size:12px; color:#666; margin-bottom:20px;">Если ошибешься — ты проиграл!</p>
         <div class="glass-card" style="width: 100%;">
             <input id="risk-input" type="text" placeholder="Введите слово...">
-            <button class="btn" onclick="sendSpyGuess('risk')">ПОДТВЕРДИТЬ</button>
+            <button class="btn" onclick="sendSpyGuess('risk')">УГАДАТЬ</button>
             <button class="btn" style="background:#222; margin-top:10px;" onclick="toggleRiskMenu(false)">НАЗАД</button>
         </div>
     </div>
 
     <div id="overlay-vote" class="overlay hidden">
-        <div class="circle-reset" style="position: absolute; top: 20px; right: 20px;" onclick="triggerReset()">×</div>
         <h2>КТО ШПИОН?</h2>
         <div id="vote-list" class="grid-vote"></div>
     </div>
@@ -100,8 +98,8 @@
     <div id="overlay-res" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
             <h1 style="color:var(--green)">ИТОГИ</h1>
-            <p id="res-msg" style="font-size: 14px; margin-bottom: 10px; color: var(--red); font-weight: 900;"></p>
-            <p id="res-spy" style="margin-bottom: 20px;"></p>
+            <p id="res-msg" style="font-size: 16px; margin: 15px 0; color: #fff; font-weight: 700;"></p>
+            <p id="res-spy-name" style="margin-bottom: 20px; font-size: 12px; color: #aaa;"></p>
             <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
         </div>
     </div>
@@ -143,9 +141,7 @@
             startPolling();
         }
 
-        function toggleRiskMenu(show) {
-            document.getElementById('overlay-risk').classList.toggle('hidden', !show);
-        }
+        function toggleRiskMenu(show) { document.getElementById('overlay-risk').classList.toggle('hidden', !show); }
 
         function startPolling() { 
             document.getElementById('display-room').innerText = myRoom;
@@ -193,7 +189,6 @@
             document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + (d.category || "???");
             document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
 
-            // Показываем кнопку риска только шпиону и только в фазе чата
             document.getElementById('risk-btn').classList.toggle('hidden', d.role !== 'ШПИОН' || d.phase !== 'CHAT');
 
             const indicator = document.getElementById('turn-indicator');
@@ -218,12 +213,13 @@
             document.getElementById('overlay-spy').classList.toggle('hidden', d.phase !== 'SPY_GUESS' || d.role !== 'ШПИОН');
             document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
 
+            if (d.phase === 'RESULTS') {
+                document.getElementById('res-msg').innerText = d.result_msg || "Игра окончена";
+                document.getElementById('res-spy-name').innerText = `Шпион: ${d.spy}`;
+            }
+
             if (d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
                 document.getElementById('vote-list').innerHTML = d.order.filter(p => p !== myName).map(p => `<button class="v-btn" onclick="sendVote('${p}')">${p}</button>`).join('');
-            }
-            if (d.phase === 'RESULTS') {
-                document.getElementById('res-spy').innerText = `Шпион: ${d.spy}`;
-                document.getElementById('res-msg').innerText = d.result_msg;
             }
         }
 
