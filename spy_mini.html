@@ -14,7 +14,7 @@
         .btn { background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; text-transform: uppercase; cursor: pointer; }
         .btn:disabled { background: #222; color: #555; }
         .btn-risk { background: #441010; color: var(--red); border: 1px solid var(--red); padding: 10px; border-radius: 12px; font-size: 10px; margin-top: 10px; width: auto; font-weight: 900; cursor: pointer; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
+        input { width: 100%; background: #000 !important; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
         .msg.me { align-self: flex-end; background: var(--primary); }
@@ -72,7 +72,7 @@
         <div id="turn-indicator">ЗАГРУЗКА...</div>
         <div id="chat-box"></div>
         <div style="display:flex; gap:8px; background:var(--card); padding:8px; border-radius:18px;">
-            <input id="chat-in" style="margin-bottom:0; flex-grow:1; background:none; border:none;" placeholder="Ваш вопрос..." disabled>
+            <input id="chat-in" style="margin-bottom:0; flex-grow:1; background:none; border:none;" placeholder="Ваш вопрос..." disabled onkeydown="if(event.key==='Enter') sendMsg()">
             <button id="send-btn" class="btn" onclick="sendMsg()" style="width:60px; padding:0;" disabled>></button>
         </div>
     </div>
@@ -80,7 +80,7 @@
     <div id="overlay-risk" class="overlay hidden">
         <h2 style="color:var(--red)">ВА-БАНК</h2>
         <div class="glass-card" style="width: 100%;">
-            <input id="risk-input" type="text" placeholder="Введите слово...">
+            <input id="risk-input" type="text" placeholder="Введите слово..." onkeydown="if(event.key==='Enter') sendSpyGuess('risk')">
             <button class="btn" onclick="sendSpyGuess('risk')">УГАДАТЬ</button>
             <button class="btn" style="background:#222; margin-top:10px;" onclick="toggleRiskMenu(false)">НАЗАД</button>
         </div>
@@ -92,7 +92,7 @@
     </div>
     <div id="overlay-spy" class="overlay hidden">
         <h2>ТЫ РАСКРЫТ!</h2>
-        <input id="spy-in" style="text-align:center;" placeholder="Слово...">
+        <input id="spy-in" style="text-align:center;" placeholder="Слово..." onkeydown="if(event.key==='Enter') sendSpyGuess('final')">
         <button class="btn" onclick="sendSpyGuess('final')">ОТВЕТИТЬ</button>
     </div>
     <div id="overlay-res" class="overlay hidden">
@@ -141,7 +141,14 @@
             startPolling();
         }
 
-        function toggleRiskMenu(show) { document.getElementById('overlay-risk').classList.toggle('hidden', !show); }
+        function toggleRiskMenu(show) { 
+            const ov = document.getElementById('overlay-risk');
+            ov.classList.toggle('hidden', !show); 
+            if(show) {
+                // Авто-фокус на поле ввода для ПК
+                setTimeout(() => document.getElementById('risk-input').focus(), 100);
+            }
+        }
 
         function startPolling() { 
             document.getElementById('display-room').innerText = myRoom;
@@ -233,13 +240,15 @@
         }
         
         async function sendVote(target) {
+            document.getElementById('vote-list').innerHTML = ""; // очистка списка
             document.getElementById('overlay-vote').classList.add('hidden');
             await fetch(`${SERVER_URL}/vote`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, target: target }) });
         }
 
         async function sendSpyGuess(type) {
             const field = type === 'risk' ? 'risk-input' : 'spy-in';
-            const val = document.getElementById(field).value;
+            const val = document.getElementById(field).value.trim();
+            if(!val) return;
             if (type === 'risk') toggleRiskMenu(false);
             await fetch(`${SERVER_URL}/spy_guess`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, text: val }) });
         }
