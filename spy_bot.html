@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena Realtime</title>
+    <title>Spy</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --text: #fff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; }
-        .screen { display: none; flex-direction: column; height: 100%; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; box-sizing: border-box; }
+        .screen { display: none; flex-direction: column; }
         .active { display: flex; }
-        h1 { font-size: 42px; font-weight: 900; text-align: center; margin: 10px 0; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 12px; }
-        .bold-btn { background: var(--primary); color: #fff; border: none; border-radius: 18px; padding: 20px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
-        .bold-btn:disabled { background: #222; color: #444; transform: none; }
-        .player-row { background: #222; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; font-weight: 700; border-left: 4px solid var(--primary); }
-        .loader { text-align: center; font-size: 12px; color: var(--primary); font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        h1 { font-size: 42px; font-weight: 900; text-align: center; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 10px 0; }
+        .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
+        .bold-btn { background: var(--primary); color: #fff; border: none; border-radius: 18px; padding: 20px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+        .bold-btn:disabled { background: #222; color: #444; }
+        .player-row { background: #222; padding: 15px; border-radius: 12px; font-weight: 700; border-left: 4px solid var(--primary); margin-bottom: 8px; }
+        .status { color: var(--primary); font-size: 12px; font-weight: 900; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -24,69 +24,76 @@
     <div id="scr-lobby" class="screen active">
         <h1>ЛОББИ</h1>
         <div class="glass-card">
-            <div class="loader" id="status-text">ПОИСК ИГРОКОВ...</div>
-            <div id="player-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+            <div class="status" id="lobby-status">ПОДКЛЮЧЕНИЕ К СЕРВЕРУ...</div>
+            <div id="player-list">
                 </div>
-            <button id="start-btn" class="bold-btn" disabled onclick="showMenu()">ЖДЕМ СОСТАВ</button>
+            <button id="start-btn" class="bold-btn" disabled onclick="showMenu()">ЖДЕМ ИГРОКОВ (0/3)</button>
+            <button class="bold-btn" style="background: #333; margin-top: 10px;" onclick="refreshLobby()">ОБНОВИТЬ СПИСОК</button>
         </div>
     </div>
 
     <div id="scr-menu" class="screen">
         <h1>ШПИОН</h1>
         <div class="glass-card">
-            <button class="bold-btn" onclick="play('Brawl Stars')">BRAWL STARS</button>
-            <button class="bold-btn" onclick="play('Русский рэп')">РУССКИЙ РЭП</button>
-            <button class="bold-btn" style="background:#333" onclick="play('Clash Royale')">CLASH ROYALE</button>
+            <button class="bold-btn" onclick="startGame('Brawl Stars')">BRAWL STARS</button>
+            <button class="bold-btn" onclick="startGame('Русский рэп')">РУССКИЙ РЭП</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#0a0a0a');
 
-        // Берем имя из телеги
-        const userName = tg.initDataUnsafe?.user?.first_name || "Аноним";
-        let players = [userName]; // Пока имитируем, позже привяжем сервер
+        const user = tg.initDataUnsafe?.user;
+        const myName = user ? (user.first_name || user.username) : "Аноним";
 
-        function updateLobby() {
-            const list = document.getElementById('player-list');
-            const btn = document.getElementById('start-btn');
-            const status = document.getElementById('status-text');
+        // Функция получения списка игроков из "облака" Telegram
+        function refreshLobby() {
+            const status = document.getElementById('lobby-status');
+            status.innerText = "ОБНОВЛЕНИЕ...";
 
-            list.innerHTML = players.map(p => `<div class="player-row"><span>${p}</span><span>ГОТОВ</span></div>`).join('');
+            // В идеале здесь должен быть запрос к твоему Python серверу.
+            // Пока мы используем имитацию логики входа, но БЕЗ авто-добавления ботов.
+            // Чтобы это работало реально на 3-х устройствах, нужен бэкенд.
             
-            if(players.length >= 2) {
-                status.innerText = "ВСЕ В СБОРЕ";
-                status.style.color = "#00ff00";
-                btn.disabled = false;
-                btn.innerText = "НАЧАТЬ";
-            } else {
-                status.innerText = `В ОЧЕРЕДИ: ${players.length}/3`;
-            }
+            renderPlayers([myName]); 
         }
 
-        // Имитация захода друзей (через 2 и 4 секунды)
-        // Чтобы проверить реально — скинь ссылку двум друзьям
-        setTimeout(() => { players.push("Димон"); updateLobby(); }, 2000);
-        setTimeout(() => { players.push("Макс"); updateLobby(); }, 4000);
+        function renderPlayers(list) {
+            const container = document.getElementById('player-list');
+            const btn = document.getElementById('start-btn');
+            const status = document.getElementById('lobby-status');
+
+            container.innerHTML = list.map(p => `<div class="player-row">${p} ✅</div>`).join('');
+            
+            const count = list.length;
+            status.innerText = `В ОЧЕРЕДИ: ${count}/3`;
+
+            if (count >= 3) {
+                btn.disabled = false;
+                btn.innerText = "НАЧАТЬ ИГРУ";
+                status.style.color = "#00ff00";
+            } else {
+                btn.disabled = true;
+                btn.innerText = `НУЖНО ЕЩЕ ${3 - count}`;
+            }
+        }
 
         function showMenu() {
             document.getElementById('scr-lobby').classList.remove('active');
             document.getElementById('scr-menu').classList.add('active');
         }
 
-        function play(topic) {
-            // Вместо тупого alert() делаем красивое завершение
-            tg.showConfirm(`Начать игру по теме ${topic}?`, (ok) => {
+        function startGame(topic) {
+            tg.showConfirm(`Выбрана тема: ${topic}. Начинаем?`, (ok) => {
                 if(ok) {
-                    // Тут логика перехода к ролям
-                    console.log("Погнали!");
+                    // Переход к логике ролей
                 }
             });
         }
 
-        updateLobby();
+        // При запуске
+        refreshLobby();
     </script>
 </body>
 </html>
