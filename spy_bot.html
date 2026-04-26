@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena Realtime</title>
+    <title>Spy Arena</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --green: #00ff88; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
-        h1 { font-size: 42px; font-weight: 900; text-align: center; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; overflow: hidden; }
+        h1 { font-size: 42px; font-weight: 900; text-align: center; text-transform: uppercase; background: linear-gradient(180deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 10px 0; }
         .glass-card { background: var(--card); border-radius: 24px; padding: 25px; border: 1px solid #262626; display: flex; flex-direction: column; gap: 15px; }
-        .player-item { background: #222; padding: 16px; border-radius: 16px; font-weight: 700; display: flex; justify-content: space-between; border-left: 5px solid var(--primary); }
-        .bold-btn { background: var(--primary); color: white; border: none; padding: 20px; border-radius: 18px; font-size: 18px; font-weight: 900; text-transform: uppercase; width: 100%; transition: 0.2s; }
+        .player-item { background: #222; padding: 15px; border-radius: 16px; font-weight: 700; display: flex; justify-content: space-between; border-left: 5px solid var(--primary); font-size: 14px; }
+        .bold-btn { background: var(--primary); color: white; border: none; padding: 20px; border-radius: 18px; font-size: 18px; font-weight: 900; text-transform: uppercase; width: 100%; }
         .bold-btn:disabled { background: #262626; color: #555; }
-        .status { font-size: 11px; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 900; }
+        .status { font-size: 10px; text-align: center; text-transform: uppercase; font-weight: 900; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
     <h1>ЛОББИ</h1>
     <div class="glass-card">
-        <div id="status" class="status" style="color: #ff4444;">ПОИСК СЕТИ...</div>
-        <div id="player-list"></div>
+        <div id="status" class="status" style="color: #555;">СИНХРОНИЗАЦИЯ...</div>
+        <div id="player-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
         <button id="start-btn" class="bold-btn" disabled>НУЖНО 3 ИГРОКА</button>
     </div>
 
@@ -30,23 +30,25 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ССЫЛКА ИЗ NGROK (НЕ ЗАБУДЬ ОБНОВИТЬ ПРИ ПЕРЕЗАПУСКЕ)
+        // ССЫЛКА ИЗ NGROK
         const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
 
-        // ПОЛУЧАЕМ НАСТОЯЩИЙ НИК ИЗ ТЕЛЕГРАМА
+        // ЛОГИКА ГЕНЕРАЦИИ НИКА С #ЧИСЛОМ
         const user = tg.initDataUnsafe?.user;
-        const myName = user ? (user.username || user.first_name) : "Аноним";
+        const baseName = user ? (user.username ? "@" + user.username : user.first_name) : "Игрок";
+        const randomNumber = Math.floor(1000 + Math.random() * 9000); // 4-значное число
+        const myFullName = `${baseName}#${randomNumber}`;
 
-        async function heartbeat() {
+        async function update() {
             try {
-                // Говорим серверу, что мы живы
+                // Пинг сервера (Heartbeat)
                 await fetch(`${SERVER_URL}/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-                    body: JSON.stringify({ name: myName })
+                    body: JSON.stringify({ name: myFullName })
                 });
 
-                // Получаем актуальный список (сервер сам удалит тех, кто "умер")
+                // Получение списка
                 const res = await fetch(`${SERVER_URL}/players`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
@@ -54,7 +56,8 @@
                 
                 render(data.players);
             } catch (e) {
-                document.getElementById('status').innerText = "СЕРВЕР ОФФЛАЙН";
+                document.getElementById('status').innerText = "СЕРВЕР OFFLINE";
+                document.getElementById('status').style.color = "red";
             }
         }
 
@@ -68,7 +71,7 @@
             
             list.innerHTML = players.map(p => `
                 <div class="player-item">
-                    <span>${p === myName ? "⭐️ " + p : p}</span>
+                    <span>${p === myFullName ? "⭐️ " + p : p}</span>
                     <span style="color:var(--green)">●</span>
                 </div>
             `).join('');
@@ -77,9 +80,8 @@
             btn.innerText = players.length >= 3 ? "ПОГНАЛИ" : `ЖДЕМ (${players.length}/3)`;
         }
 
-        // Пульс каждые 2 секунды
-        setInterval(heartbeat, 2000);
-        heartbeat();
+        setInterval(update, 2000);
+        update();
     </script>
 </body>
 </html>
