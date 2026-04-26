@@ -3,42 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Spy Arena Fixed</title>
+    <title>Spy Arena Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0a0a0a; --card: #161616; --primary: #7b2cbf; --red: #ff4444; --green: #00ff88; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
         .hidden { display: none !important; }
-        
         .glass-card { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid #262626; margin-bottom: 10px; }
         .btn { background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; text-transform: uppercase; cursor: pointer; }
         .btn:disabled { background: #222; color: #555; }
-        
         input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 15px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 10px; }
-        
         #chat-box { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 20px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
         .msg { background: #222; padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
         .msg.me { align-self: flex-end; background: var(--primary); }
-        
         .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .grid-vote { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .v-btn { background: var(--card); border: 1px solid #333; color: #fff; padding: 20px; border-radius: 15px; font-weight: 700; }
-
-        /* Та самая кнопка сброса */
-        .emergency-btn {
-            background: #200; color: #600; border: none; border-radius: 10px;
-            padding: 8px; font-size: 9px; font-weight: 900; width: 100%;
-            margin-top: auto; text-transform: uppercase; letter-spacing: 1px;
-            cursor: pointer; opacity: 0.6;
-        }
+        .emergency-btn { background: #200; color: #844; border: none; border-radius: 10px; padding: 8px; font-size: 9px; font-weight: 900; width: 100%; margin-top: auto; text-transform: uppercase; cursor: pointer; }
+        #turn-indicator { text-align: center; font-size: 11px; margin-bottom: 10px; padding: 5px; border-radius: 10px; background: #111; color: #aaa; }
     </style>
 </head>
 <body>
 
     <div id="screen-auth" class="overlay">
         <h1 style="font-size: 40px; margin-bottom: 10px;">SPY ARENA</h1>
-        <div class="glass-card" style="width: 100%; box-sizing: border-box;">
+        <div class="glass-card" style="width: 100%;">
             <input id="nick-input" type="text" placeholder="Твой ник..." maxlength="12">
             <button class="btn" onclick="confirmNick()">ВОЙТИ</button>
         </div>
@@ -48,27 +38,31 @@
         <h1 style="text-align:center; font-size:28px;">ЛОББИ</h1>
         <div class="glass-card">
             <div id="player-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
-            <button id="start-btn" class="btn" onclick="startGame()" disabled>ОЖИДАНИЕ...</button>
+            <button id="start-btn" class="btn" onclick="startGame()" disabled>ЖДЕМ ИГРОКОВ</button>
         </div>
     </div>
 
-    <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column; overflow: hidden;">
-        <div class="glass-card" style="padding: 15px;">
+    <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
+        <div class="glass-card" style="padding: 15px; margin-bottom: 5px;">
             <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900;">
                 <div id="g-role">РОЛЬ</div>
                 <div id="g-round">КРУГ 1/3</div>
             </div>
             <div id="g-word" style="font-size:24px; font-weight:900; margin-top:5px;">...</div>
-            <div id="g-category" style="font-size:11px; color: var(--green);">ТЕМАТИКА: ...</div>
+            <div id="g-category" style="font-size:11px; color: var(--green);">КАТЕГОРИЯ: ...</div>
         </div>
+        
+        <div id="turn-indicator">ЗАГРУЗКА ХОДА...</div>
+
         <div id="chat-box"></div>
+        
         <div style="display:flex; gap:8px; background:var(--card); padding:8px; border-radius:18px;">
             <input id="chat-in" style="margin-bottom:0; flex-grow:1; background:none; border:none;" placeholder="Ваш вопрос..." disabled>
             <button id="send-btn" class="btn" onclick="sendMsg()" style="width:60px; padding:0;" disabled>></button>
         </div>
     </div>
 
-    <button id="main-reset-btn" class="emergency-btn hidden" onclick="triggerReset()">Экстренный сброс сервера (ошибка)</button>
+    <button id="main-reset-btn" class="emergency-btn hidden" onclick="triggerReset()">Экстренный сброс (на главную)</button>
 
     <div id="overlay-vote" class="overlay hidden">
         <h2>КТО ШПИОН?</h2>
@@ -76,21 +70,21 @@
     </div>
     <div id="overlay-spy" class="overlay hidden">
         <h2 style="color:var(--red)">ТЫ РАСКРЫТ!</h2>
-        <input id="spy-in" placeholder="Угадай слово...">
-        <button class="btn" onclick="sendSpyGuess()">ОТПРАВИТЬ</button>
+        <input id="spy-in" style="text-align:center;" placeholder="Какое слово?">
+        <button class="btn" onclick="sendSpyGuess()">ОТВЕТИТЬ</button>
     </div>
     <div id="overlay-res" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
-            <h1 style="color:var(--green)">ИТОГИ</h1>
-            <p id="res-spy" style="font-size: 18px; margin: 20px 0;"></p>
-            <button class="btn" onclick="triggerReset()">ВЕРНУТЬСЯ В ЛОББИ</button>
+            <h1 style="color:var(--green)">ФИНАЛ</h1>
+            <p id="res-spy" style="margin: 15px 0;"></p>
+            <button class="btn" onclick="triggerReset()">В ЛОББИ</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // ТВОЙ NGROK
+        const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
         
         let myName = sessionStorage.getItem('spy_nick') || "";
 
@@ -101,9 +95,8 @@
         }
 
         function confirmNick() {
-            const input = document.getElementById('nick-input');
-            const val = input.value.trim();
-            if (val.length < 2) return alert("Минимум 2 символа!");
+            const val = document.getElementById('nick-input').value.trim();
+            if (val.length < 2) return alert("Ник от 2 символов!");
             myName = val + "#" + Math.floor(1000 + Math.random() * 9000);
             sessionStorage.setItem('spy_nick', myName);
             document.getElementById('screen-auth').classList.add('hidden');
@@ -111,22 +104,13 @@
             startPolling();
         }
 
-        function startPolling() {
-            setInterval(mainLoop, 2000);
-            mainLoop();
-        }
+        function startPolling() { setInterval(mainLoop, 2000); mainLoop(); }
 
         async function mainLoop() {
             if (!myName) return;
             try {
-                const safeName = encodeURIComponent(myName);
-                await fetch(`${SERVER_URL}/join`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
-                    body: JSON.stringify({ name: myName })
-                });
-
-                const r = await fetch(`${SERVER_URL}/game_data?name=${safeName}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+                await fetch(`${SERVER_URL}/join`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ name: myName }) });
+                const r = await fetch(`${SERVER_URL}/game_data?name=${encodeURIComponent(myName)}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
                 const d = await r.json();
 
                 if (!d.active) {
@@ -139,29 +123,41 @@
                     document.getElementById('screen-game').classList.remove('hidden');
                     updateGame(d);
                 }
-            } catch (e) { console.log("Net Error"); }
+            } catch (e) { console.log("error"); }
         }
 
         async function updateLobby() {
-            try {
-                const res = await fetch(`${SERVER_URL}/players`, { headers: {'ngrok-skip-browser-warning': 'true'} });
-                const data = await res.json();
-                document.getElementById('player-list').innerHTML = data.players.map(p => 
-                    `<div class="glass-card" style="padding:10px; margin:0; font-size:14px;">${p === myName ? "<b>(Вы)</b> " : ""}${p}</div>`
-                ).join('');
-                const btn = document.getElementById('start-btn');
-                btn.disabled = data.players.length < 3;
-                btn.innerText = data.players.length >= 3 ? "НАЧАТЬ ИГРУ" : `ЖДЕМ (${data.players.length}/3)`;
-                document.getElementById('vote-list').innerHTML = "";
-            } catch(e) {}
+            const res = await fetch(`${SERVER_URL}/players`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+            const data = await res.json();
+            document.getElementById('player-list').innerHTML = data.players.map(p => `<div class="glass-card" style="padding:10px; margin:0;">${p === myName ? "<b>(Вы)</b> " : ""}${p}</div>`).join('');
+            const btn = document.getElementById('start-btn');
+            btn.disabled = data.players.length < 3;
+            btn.innerText = data.players.length >= 3 ? "НАЧАТЬ ИГРУ" : `ЖДЕМ (${data.players.length}/3)`;
+            document.getElementById('vote-list').innerHTML = "";
         }
 
         function updateGame(d) {
             document.getElementById('g-role').innerText = d.role;
             document.getElementById('g-role').style.color = d.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
             document.getElementById('g-word').innerText = d.word;
-            document.getElementById('g-category').innerText = "ТЕМАТИКА: " + (d.category || "???");
+            document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + (d.category || "???");
             document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
+
+            // ОБНОВЛЕНИЕ ИНДИКАТОРА ХОДА
+            const indicator = document.getElementById('turn-indicator');
+            if (d.phase === 'CHAT') {
+                if (d.is_my_turn) {
+                    indicator.innerText = "★ ТВОЙ ХОД! ЗАДАВАЙ ВОПРОС ★";
+                    indicator.style.color = "var(--green)";
+                    indicator.style.background = "#020";
+                } else {
+                    indicator.innerText = `СЕЙЧАС ПИШЕТ: ${d.current_turn}`;
+                    indicator.style.color = "#aaa";
+                    indicator.style.background = "#111";
+                }
+            } else {
+                indicator.innerText = d.phase;
+            }
 
             const input = document.getElementById('chat-in');
             const btn = document.getElementById('send-btn');
@@ -186,11 +182,7 @@
         }
 
         async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); }
-        async function triggerReset() { 
-            if(confirm("Сбросить игру для всех?")) {
-                await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); 
-            }
-        }
+        async function triggerReset() { if(confirm("Сбросить для всех?")) await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'ngrok-skip-browser-warning': 'true'} }); }
         async function sendMsg() {
             const input = document.getElementById('chat-in');
             const val = input.value.trim(); if(!val) return; input.value = "";
