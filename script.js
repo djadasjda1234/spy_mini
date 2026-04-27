@@ -1,4 +1,4 @@
-const SERVER_URL = "https://ТВОЙ-URL-ИЗ-NGROK.ngrok-free.app"; 
+const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
 let myName = localStorage.getItem('spy_nick');
 let myRoom = localStorage.getItem('spy_room');
 
