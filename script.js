@@ -12,13 +12,16 @@ function closeConfirm() { document.getElementById('overlay-confirm').classList.a
 function init() {
     if (!myName) showScreen('screen-auth');
     else if (!myRoom) showScreen('screen-room-select');
-    else { showScreen('main-content'); startPolling(); }
+    else { 
+        showScreen('main-content'); 
+        document.getElementById('screen-lobby').classList.remove('hidden');
+        startPolling(); 
+    }
 }
 
 function showScreen(id) {
-    document.querySelectorAll('.overlay, #main-content, #screen-lobby, #screen-game').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.overlay, #main-content').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    if(id === 'main-content') document.getElementById('screen-lobby').classList.remove('hidden');
 }
 
 function confirmNick() {
@@ -49,28 +52,37 @@ function startPolling() {
             const d = await r.json();
 
             if (!d.active) {
-                // Если сервер ответил, что игра не активна, принудительно гасим все игровые окна
+                // ИГРА НЕ НАЧАТА (ЛОББИ)
+                document.getElementById('main-content').classList.remove('hidden');
                 document.getElementById('screen-lobby').classList.remove('hidden');
                 document.getElementById('screen-game').classList.add('hidden');
                 document.getElementById('overlay-res').classList.add('hidden');
                 document.getElementById('overlay-vote').classList.add('hidden');
                 updateLobby();
             } else {
+                // ИГРА ИДЕТ
+                document.getElementById('main-content').classList.remove('hidden');
                 document.getElementById('screen-lobby').classList.add('hidden');
                 document.getElementById('screen-game').classList.remove('hidden');
                 updateGame(d);
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("Ошибка опроса сервера:", e);
+        }
     }, 2000);
 }
 
 async function updateLobby() {
-    const r = await fetch(`${SERVER_URL}/players?room=${myRoom}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
-    const d = await r.json();
-    document.getElementById('player-list').innerHTML = d.players.map(p => `<div class="player-badge"><span>${p}</span> ${p === myName ? '<b>(ТЫ)</b>' : ''}</div>`).join('');
-    const btn = document.getElementById('start-btn');
-    btn.disabled = d.players.length < 3;
-    btn.innerText = d.players.length < 3 ? `ЖДЕМ (${d.players.length}/3)` : "НАЧАТЬ ИГРУ";
+    try {
+        const r = await fetch(`${SERVER_URL}/players?room=${myRoom}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
+        const d = await r.json();
+        if (d.players) {
+            document.getElementById('player-list').innerHTML = d.players.map(p => `<div class="player-badge"><span>${p}</span> ${p === myName ? '<b>(ТЫ)</b>' : ''}</div>`).join('');
+            const btn = document.getElementById('start-btn');
+            btn.disabled = d.players.length < 3;
+            btn.innerText = d.players.length < 3 ? `ЖДЕМ (${d.players.length}/3)` : "НАЧАТЬ ИГРУ";
+        }
+    } catch (e) {}
 }
 
 function updateGame(d) {
@@ -114,9 +126,7 @@ async function submitSpyWord() {
 async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
 
 async function triggerReset() {
-    // 1. Сначала скрываем оверлей визуально для игрока
     document.getElementById('overlay-res').classList.add('hidden');
-    // 2. Отправляем запрос на сервер для полного сброса
     await fetch(`${SERVER_URL}/reset`, { 
         method: 'POST', 
         headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, 
