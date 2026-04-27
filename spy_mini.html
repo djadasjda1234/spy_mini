@@ -30,9 +30,11 @@
         <h2>ВЫБОР СЕССИИ</h2>
         <input id="room-input" type="text" placeholder="ID Комнаты">
         <button class="btn" onclick="confirmRoom()">ПРИСОЕДИНИТЬСЯ</button>
+        <button class="btn-exit" style="margin-top: 20px; width: 100%;" onclick="changeNick()">ИЗМЕНИТЬ НИК</button>
     </div>
 
     <div id="main-content" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
+        
         <div id="screen-lobby" class="hidden">
             <div style="display:flex; justify-content: space-between; margin-bottom:15px; align-items:center;">
                 <button class="btn-exit" onclick="showConfirm('Выйти?', leaveRoom)">← ВЫЙТИ</button>
@@ -76,7 +78,10 @@
         </div>
     </div>
 
-    <div id="overlay-vote" class="overlay hidden"><h2>ГОЛОСОВАНИЕ</h2><div id="vote-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%;"></div></div>
+    <div id="overlay-vote" class="overlay hidden">
+        <h2>ГОЛОСОВАНИЕ</h2>
+        <div id="vote-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%;"></div>
+    </div>
     
     <div id="overlay-res" class="overlay hidden">
         <div class="glass-card">
