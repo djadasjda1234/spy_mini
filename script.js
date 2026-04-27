@@ -1,4 +1,4 @@
-const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
+const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // ЗАМЕНИ ЭТО!
 let myName = localStorage.getItem('spy_nick');
 let myRoom = localStorage.getItem('spy_room');
 
@@ -7,7 +7,6 @@ function showConfirm(text, cb) {
     document.getElementById('overlay-confirm').classList.remove('hidden');
     document.getElementById('confirm-yes-btn').onclick = () => { cb(); closeConfirm(); };
 }
-
 function closeConfirm() { document.getElementById('overlay-confirm').classList.add('hidden'); }
 
 function init() {
@@ -45,11 +44,7 @@ function startPolling() {
     setInterval(async () => {
         if(!myRoom || !myName) return;
         try {
-            await fetch(`${SERVER_URL}/join`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, 
-                body: JSON.stringify({ room: myRoom, name: myName }) 
-            });
+            await fetch(`${SERVER_URL}/join`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) });
             const r = await fetch(`${SERVER_URL}/game_data?room=${myRoom}&name=${encodeURIComponent(myName)}`, { headers: {'ngrok-skip-browser-warning': 'true'} });
             const d = await r.json();
 
@@ -82,7 +77,7 @@ function updateGame(d) {
     document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + d.category;
     document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
     document.getElementById('turn-indicator').innerText = d.is_my_turn ? "★ ТВОЙ ХОД ★" : `ХОДИТ: ${d.current_turn}`;
-    document.getElementById('spy-guess-btn').classList.toggle('hidden', d.role !== "ШПИОН");
+    document.getElementById('spy-guess-btn').classList.toggle('hidden', d.role !== "ШПИОН" || d.phase !== "CHAT");
     document.getElementById('chat-box').innerHTML = d.messages.map(m => `<div class="msg ${m.user === myName ? 'me' : ''}"><small>${m.user}</small><br>${m.text}</div>`).join('');
     document.getElementById('overlay-vote').classList.toggle('hidden', d.phase !== 'VOTING');
     document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
@@ -93,11 +88,18 @@ function updateGame(d) {
 }
 
 function showSpyGuess() { document.getElementById('overlay-spy-input').classList.remove('hidden'); }
+
 async function submitSpyWord() {
-    const word = document.getElementById('spy-word-input').value.trim();
+    const wordInput = document.getElementById('spy-word-input');
+    const word = wordInput.value.trim();
     if(!word) return;
+    await fetch(`${SERVER_URL}/spy_guess`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
+        body: JSON.stringify({ room: myRoom, name: myName, text: word })
+    });
     document.getElementById('overlay-spy-input').classList.add('hidden');
-    alert("Вариант отправлен!"); 
+    wordInput.value = "";
 }
 
 async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
