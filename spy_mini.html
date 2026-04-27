@@ -10,7 +10,6 @@
 </head>
 <body>
 
-    <!-- ПОДТВЕРЖДЕНИЕ -->
     <div id="overlay-confirm" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
             <h3 id="confirm-text">Уверен?</h3>
@@ -21,14 +20,12 @@
         </div>
     </div>
 
-    <!-- АВТОРИЗАЦИЯ -->
     <div id="screen-auth" class="overlay hidden">
         <h1 style="font-size: 32px;">SPY ARENA</h1>
         <input id="nick-input" type="text" placeholder="Твой ник...">
         <button class="btn" onclick="confirmNick()">ВОЙТИ</button>
     </div>
 
-    <!-- ВЫБОР КОМНАТЫ -->
     <div id="screen-room-select" class="overlay hidden">
         <h2>ВЫБОР СЕССИИ</h2>
         <input id="room-input" type="text" placeholder="ID Комнаты">
@@ -36,8 +33,6 @@
     </div>
 
     <div id="main-content" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
-        
-        <!-- ЛОББИ -->
         <div id="screen-lobby" class="hidden">
             <div style="display:flex; justify-content: space-between; margin-bottom:15px; align-items:center;">
                 <button class="btn-exit" onclick="showConfirm('Выйти?', leaveRoom)">← ВЫЙТИ</button>
@@ -48,7 +43,6 @@
             <button id="start-btn" class="btn" onclick="startGame()" style="margin-top:10px;" disabled>ЖДЕМ ИГРОКОВ</button>
         </div>
 
-        <!-- ИГРА -->
         <div id="screen-game" class="hidden" style="flex-grow:1; display:flex; flex-direction:column;">
             <div class="glass-card" style="padding:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -73,7 +67,6 @@
         </div>
     </div>
 
-    <!-- ОВЕРЛЕЙ ДЛЯ ШПИОНА -->
     <div id="overlay-spy-input" class="overlay hidden">
         <div class="glass-card" style="width:80%;">
             <h3>ЧТО ЗА СЛОВО?</h3>
