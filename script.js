@@ -1,13 +1,25 @@
-const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; 
+// ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ИЗ NGROK
+const SERVER_URL = "https://ВАШ-URL-ИЗ-NGROK.ngrok-free.app"; 
+
 let myName = localStorage.getItem('spy_nick');
 let myRoom = localStorage.getItem('spy_room');
 
+// Инициализация при загрузке страницы
+window.onload = () => {
+    console.log("App ready");
+    init();
+};
+
 function showConfirm(text, cb) {
+    const el = document.getElementById('overlay-confirm');
     document.getElementById('confirm-text').innerText = text;
-    document.getElementById('overlay-confirm').classList.remove('hidden');
+    el.classList.remove('hidden');
     document.getElementById('confirm-yes-btn').onclick = () => { cb(); closeConfirm(); };
 }
-function closeConfirm() { document.getElementById('overlay-confirm').classList.add('hidden'); }
+
+function closeConfirm() { 
+    document.getElementById('overlay-confirm').classList.add('hidden'); 
+}
 
 function init() {
     if (!myName) {
@@ -20,13 +32,21 @@ function init() {
     }
 }
 
-// Функция теперь просто показывает один главный экран и скрывает остальные оверлеи
+function changeNick() {
+    localStorage.removeItem('spy_nick');
+    myName = null;
+    showScreen('screen-auth');
+}
+
 function showScreen(id) {
+    // Скрываем все глобальные разделы
     document.getElementById('screen-auth').classList.add('hidden');
     document.getElementById('screen-room-select').classList.add('hidden');
     document.getElementById('main-content').classList.add('hidden');
     
-    document.getElementById(id).classList.remove('hidden');
+    // Показываем нужный
+    const target = document.getElementById(id);
+    if (target) target.classList.remove('hidden');
 }
 
 function confirmNick() {
@@ -47,22 +67,25 @@ function confirmRoom() {
 
 function leaveRoom() {
     localStorage.removeItem('spy_room');
+    myRoom = null;
     location.reload();
 }
 
 function startPolling() {
-    document.getElementById('display-room').innerText = myRoom;
+    const roomDisp = document.getElementById('display-room');
+    if (roomDisp) roomDisp.innerText = myRoom;
+
     setInterval(async () => {
         if(!myRoom || !myName) return;
         try {
-            // Пинг сервера
+            // Регистрация/Пинг
             await fetch(`${SERVER_URL}/join`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, 
                 body: JSON.stringify({ room: myRoom, name: myName }) 
             });
 
-            // Получение данных игры
+            // Получение данных
             const r = await fetch(`${SERVER_URL}/game_data?room=${myRoom}&name=${encodeURIComponent(myName)}`, { 
                 headers: {'ngrok-skip-browser-warning': 'true'} 
             });
@@ -72,20 +95,20 @@ function startPolling() {
             const gameEl = document.getElementById('screen-game');
 
             if (!d.active) {
-                // СОСТОЯНИЕ: ЛОББИ
+                // ЛОББИ
                 lobbyEl.classList.remove('hidden');
                 gameEl.classList.add('hidden');
                 document.getElementById('overlay-res').classList.add('hidden');
                 document.getElementById('overlay-vote').classList.add('hidden');
                 updateLobby();
             } else {
-                // СОСТОЯНИЕ: ИГРА ИДЕТ
+                // ИГРА
                 lobbyEl.classList.add('hidden');
                 gameEl.classList.remove('hidden');
                 updateGame(d);
             }
         } catch (e) {
-            console.log("Ошибка связи с сервером");
+            console.warn("Server offline");
         }
     }, 2000);
 }
@@ -97,8 +120,7 @@ async function updateLobby() {
         });
         const d = await r.json();
         if (d.players) {
-            const list = document.getElementById('player-list');
-            list.innerHTML = d.players.map(p => `
+            document.getElementById('player-list').innerHTML = d.players.map(p => `
                 <div class="player-badge">
                     <span>${p}</span> 
                     ${p === myName ? '<b style="color:var(--primary)">(ТЫ)</b>' : ''}
@@ -113,24 +135,23 @@ async function updateLobby() {
 }
 
 function updateGame(d) {
-    document.getElementById('g-role').innerText = d.role;
-    document.getElementById('g-role').style.color = d.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
+    const roleEl = document.getElementById('g-role');
+    roleEl.innerText = d.role;
+    roleEl.style.color = d.role === "ШПИОН" ? "var(--red)" : "var(--primary)";
+    
     document.getElementById('g-word').innerText = d.word;
     document.getElementById('g-category').innerText = "КАТЕГОРИЯ: " + d.category;
     document.getElementById('g-round').innerText = `КРУГ ${d.round}/3`;
     document.getElementById('turn-indicator').innerText = d.is_my_turn ? "★ ТВОЙ ХОД ★" : `ХОДИТ: ${d.current_turn}`;
     
-    // Кнопка угадывания только для шпиона и только в фазе чата
     document.getElementById('spy-guess-btn').classList.toggle('hidden', d.role !== "ШПИОН" || d.phase !== "CHAT");
     
-    // Чат
     document.getElementById('chat-box').innerHTML = d.messages.map(m => `
         <div class="msg ${m.user === myName ? 'me' : ''}">
             <small>${m.user}</small><br>${m.text}
         </div>
     `).join('');
     
-    // Оверлеи фаз
     document.getElementById('overlay-vote').classList.toggle('hidden', d.phase !== 'VOTING');
     document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
     
@@ -197,5 +218,3 @@ async function sendVote(t) {
         body: JSON.stringify({ room: myRoom, name: myName, target: t }) 
     });
 }
-
-init();
