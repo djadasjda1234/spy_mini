@@ -1,4 +1,4 @@
-const SERVER_URL = "https://joystick-roast-unable.ngrok-free.dev"; // ЗАМЕНИ ЭТО!
+const SERVER_URL = "https://ТВОЙ-URL-ИЗ-NGROK.ngrok-free.app"; 
 let myName = localStorage.getItem('spy_nick');
 let myRoom = localStorage.getItem('spy_room');
 
@@ -79,9 +79,15 @@ function updateGame(d) {
     document.getElementById('turn-indicator').innerText = d.is_my_turn ? "★ ТВОЙ ХОД ★" : `ХОДИТ: ${d.current_turn}`;
     document.getElementById('spy-guess-btn').classList.toggle('hidden', d.role !== "ШПИОН" || d.phase !== "CHAT");
     document.getElementById('chat-box').innerHTML = d.messages.map(m => `<div class="msg ${m.user === myName ? 'me' : ''}"><small>${m.user}</small><br>${m.text}</div>`).join('');
+    
     document.getElementById('overlay-vote').classList.toggle('hidden', d.phase !== 'VOTING');
     document.getElementById('overlay-res').classList.toggle('hidden', d.phase !== 'RESULTS');
-    if(d.phase === 'RESULTS') document.getElementById('res-msg').innerText = d.result_msg;
+    
+    if(d.phase === 'RESULTS') {
+        document.getElementById('res-msg').innerText = d.result_msg;
+        document.getElementById('vote-list').innerHTML = ""; // Сброс для следующей игры
+    }
+    
     if(d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
         document.getElementById('vote-list').innerHTML = d.order.filter(p=>p!==myName).map(p=>`<button class="btn" onclick="sendVote('${p}')">${p}</button>`).join('');
     }
@@ -103,14 +109,21 @@ async function submitSpyWord() {
 }
 
 async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
-async function triggerReset() { await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
+
+async function triggerReset() {
+    await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) });
+    document.getElementById('overlay-res').classList.add('hidden');
+}
+
 async function sendMsg() {
     const i = document.getElementById('chat-in');
     if(!i.value.trim()) return;
     await fetch(`${SERVER_URL}/send_message`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, text: i.value }) });
     i.value = "";
 }
+
 async function sendVote(t) {
     await fetch(`${SERVER_URL}/vote`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName, target: t }) });
 }
+
 init();
