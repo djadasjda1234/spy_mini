@@ -49,8 +49,11 @@ function startPolling() {
             const d = await r.json();
 
             if (!d.active) {
+                // Если сервер ответил, что игра не активна, принудительно гасим все игровые окна
                 document.getElementById('screen-lobby').classList.remove('hidden');
                 document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('overlay-res').classList.add('hidden');
+                document.getElementById('overlay-vote').classList.add('hidden');
                 updateLobby();
             } else {
                 document.getElementById('screen-lobby').classList.add('hidden');
@@ -85,7 +88,7 @@ function updateGame(d) {
     
     if(d.phase === 'RESULTS') {
         document.getElementById('res-msg').innerText = d.result_msg;
-        document.getElementById('vote-list').innerHTML = ""; // Сброс для следующей игры
+        document.getElementById('vote-list').innerHTML = ""; 
     }
     
     if(d.phase === 'VOTING' && document.getElementById('vote-list').innerHTML === "") {
@@ -111,8 +114,14 @@ async function submitSpyWord() {
 async function startGame() { await fetch(`${SERVER_URL}/start_game`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) }); }
 
 async function triggerReset() {
-    await fetch(`${SERVER_URL}/reset`, { method: 'POST', headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, body: JSON.stringify({ room: myRoom, name: myName }) });
+    // 1. Сначала скрываем оверлей визуально для игрока
     document.getElementById('overlay-res').classList.add('hidden');
+    // 2. Отправляем запрос на сервер для полного сброса
+    await fetch(`${SERVER_URL}/reset`, { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'}, 
+        body: JSON.stringify({ room: myRoom, name: myName }) 
+    });
 }
 
 async function sendMsg() {
